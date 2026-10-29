@@ -84,12 +84,11 @@ export function templateExplanation(
   const why =
     matched.length > 0
       ? `Rule(s) matched: ${matched.map((m) => `"${m.reason}"`).join("; ")}.`
-      : factors.length > 0
-        ? `Risk signals: ${factors.join("; ")}.`
-        : "No policy rules matched.";
+      : "No policy rules matched.";
   const verb =
     outcome === "block" ? "was blocked" : outcome === "require_approval" ? "is held for your approval" : "was allowed automatically";
-  return `${who} asked to ${what}. It ${verb} (risk ${score}/100). ${why}`;
+  const signals = factors.length > 0 ? ` Risk signals: ${factors.join("; ")}.` : "";
+  return `${who} asked to ${what}. It ${verb} (risk ${score}/100). ${why}${signals}`;
 }
 
 function describeAction(call: ToolCall): string {

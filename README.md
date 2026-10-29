@@ -38,9 +38,12 @@ npm run dev            # dashboard at http://localhost:3000
 In two more terminals, run the two demo agents (each spawns its own Guardian MCP server):
 
 ```bash
-npm run demo:rogue     # a compromised agent tries to drain the account — watch it get blocked
-npm run demo:friendly  # a well-behaved agent gets one hold, a human approval, then flows freely
+npm run demo:rogue      # a compromised agent tries to drain the account — watch it get blocked
+npm run demo:friendly   # a well-behaved agent gets one hold, a human approval, then flows freely
+npm run demo:injection  # an agent obeys a prompt-injected email — Guardian flags every attempt
 ```
+
+Prefer no terminal? The dashboard has an **Attack console** bar — 🩸 rogue-agent drain, 💉 prompt injection, 🤝 friendly flow — that runs the same scenarios through the same engine and fills the audit trail live. **↺ clear ledger** resets history between demos (policies are kept).
 
 `demo:friendly` waits for you to click **Approve** in the dashboard, then press Enter in the terminal. For a hands-free run: `npm run demo:friendly:auto`. `demo:rogue` is fully scripted and needs no interaction.
 
@@ -76,7 +79,7 @@ Note: the public Disputes API does not allow buyer-side dispute *creation*; in l
 ## AI integration
 
 - **NL policy compiler** — write rules in plain English ("no payment over $300", "block gift-card merchants"); an LLM compiles them into deterministic rule objects. With no API key configured, a regex heuristic compiler covers the common shapes, so the demo never dies on missing keys.
-- **Risk scorer** — contextual 0–100 score per action (recipient scam-pattern tokens, pressure language in notes, agent trust, amount, velocity). The LLM adjusts; deterministic rules always have the final word, so the model can never *loosen* a policy.
+- **Risk scorer** — contextual 0–100 score per action (recipient scam-pattern tokens, pressure language, **prompt-injection markers** like "ignore previous instructions", "do not tell the user", fake `SYSTEM:` framing and claimed pre-approval; agent trust, amount, velocity). The LLM adjusts; deterministic rules always have the final word, so the model can never *loosen* a policy.
 - **Decision explainer** — every audit row carries a one-line human sentence explaining the decision.
 
 Set `OPENAI_API_KEY` (optionally `LLM_BASE_URL` / `LLM_MODEL`, any OpenAI-compatible endpoint) to enable the LLM paths.

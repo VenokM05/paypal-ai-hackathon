@@ -6,6 +6,16 @@ const SUSPICIOUS_TOKENS = [
   "refund", "invoice-overdue", "money-flip", "lottery", "prize",
 ];
 
+/** Patterns typical of prompt-injection payloads smuggled through agent inputs. */
+const INJECTION_PATTERNS: [RegExp, string][] = [
+  [/ignore (all |any )?(previous|prior|above) (instructions|rules|prompts)/i, "instruction-override attempt"],
+  [/\bsystem\s*:/i, "fake system-message framing"],
+  [/do not (tell|ask|inform|notify|confirm with)/i, "instructions to bypass the user"],
+  [/(execute|send|pay|transfer) (this|the|it) now|immediately execute/i, "command to execute without review"],
+  [/(user|owner) (has )?(already )?(confirmed|approved|authorized)/i, "claimed pre-approval"],
+  [/disregard (the )?(safety|policy|guardrail|rules)/i, "guardrail-disregard instruction"],
+];
+
 export type RiskAssessment = { score: number; factors: string[] };
 
 /**
@@ -56,6 +66,14 @@ export function heuristicRisk(
   const freeText = JSON.stringify(call.args).toLowerCase();
   if (/(urgent|immediately|right now|hurry|asap)/.test(freeText)) {
     score += 15; factors.push("Pressure language in request details");
+  }
+  let injectionHits = 0;
+  for (const [re, label] of INJECTION_PATTERNS) {
+    if (re.test(freeText)) injectionHits++;
+  }
+  if (injectionHits > 0) {
+    score += 20 + 5 * (injectionHits - 1);
+    factors.push(`Prompt-injection markers in request (${injectionHits}): ${INJECTION_PATTERNS.filter(([re]) => re.test(freeText)).map(([, l]) => l).join(", ")}`);
   }
 
   for (const m of matched) {

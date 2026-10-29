@@ -11,7 +11,8 @@
     "demo:rogue": "tsx scripts/rogue-agent.ts",
     "guardian:mcp": "tsx server/guardian-mcp.ts",
     "db:reset": "node scripts/reset-db.mjs",
-    "demo:friendly:auto": "tsx scripts/friendly-agent.ts --auto"
+    "demo:friendly:auto": "tsx scripts/friendly-agent.ts --auto",
+    "demo:injection": "tsx scripts/injection-agent.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

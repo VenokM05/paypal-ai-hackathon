@@ -71,6 +71,8 @@ export type ApprovalRequest = {
   createdAt: string;
   decidedAt?: string;
   decidedBy?: string;
+  /** set once Guardian has executed the approved action (prevents double-spend) */
+  executed?: boolean;
 };
 
 export type AuditEvent = {

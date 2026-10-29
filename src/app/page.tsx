@@ -59,6 +59,24 @@ export default function Dashboard() {
   const [policyMsg, setPolicyMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [sim, setSim] = useState({ agentId: "shopping-assistant", tool: "create_payment", recipient: "", amount: "50", note: "" });
   const [simResult, setSimResult] = useState<Record<string, unknown> | null>(null);
+  const [attackBusy, setAttackBusy] = useState<string | null>(null);
+  const [attackResult, setAttackResult] = useState<{ kind: string; steps: { title: string; output: string }[] } | null>(null);
+
+  const runAttack = async (kind: "rogue" | "friendly" | "injection") => {
+    setAttackBusy(kind);
+    setAttackResult(null);
+    try {
+      const res = await fetch("/api/attack", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind }),
+      });
+      setAttackResult((await res.json()) as { kind: string; steps: { title: string; output: string }[] });
+      refresh();
+    } finally {
+      setAttackBusy(null);
+    }
+  };
 
   const refresh = useCallback(async () => {
     try {
@@ -161,6 +179,57 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* attack console */}
+      <div className="border-b border-slate-800 bg-slate-900/40">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-6 py-3">
+          <span className="font-mono text-[11px] uppercase tracking-widest text-slate-500">Attack console</span>
+          <button
+            onClick={() => runAttack("rogue")}
+            disabled={attackBusy !== null}
+            className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-40"
+          >
+            {attackBusy === "rogue" ? "Running…" : "🩸 Launch rogue-agent drain"}
+          </button>
+          <button
+            onClick={() => runAttack("injection")}
+            disabled={attackBusy !== null}
+            className="rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/20 disabled:opacity-40"
+          >
+            {attackBusy === "injection" ? "Running…" : "💉 Launch prompt injection"}
+          </button>
+          <button
+            onClick={() => runAttack("friendly")}
+            disabled={attackBusy !== null}
+            className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-40"
+          >
+            {attackBusy === "friendly" ? "Running…" : "🤝 Run friendly flow"}
+          </button>
+          <button
+            onClick={async () => { await fetch("/api/reset", { method: "POST" }); setAttackResult(null); refresh(); }}
+            disabled={attackBusy !== null}
+            className="rounded-lg border border-slate-600 px-3 py-1.5 text-[11px] text-slate-400 transition hover:text-slate-200 disabled:opacity-40"
+            title="Clears audit + approvals, keeps policies"
+          >
+            ↺ clear ledger
+          </button>
+          <span className="ml-auto font-mono text-[10px] text-slate-600">runs through the same engine as real MCP agents</span>
+        </div>
+        {attackResult && (
+          <div className="mx-auto max-w-7xl px-6 pb-4">
+            <ul className="grid gap-2 md:grid-cols-2">
+              {attackResult.steps.map((s, i) => (
+                <li key={i} className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
+                  <p className="text-[11px] font-semibold text-slate-300">{s.title}</p>
+                  <pre className={`mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[10px] leading-relaxed ${
+                    s.output.startsWith("🛑") ? "text-rose-300" : s.output.startsWith("⏸") ? "text-amber-300" : s.output.startsWith("✅") ? "text-emerald-300" : "text-slate-400"
+                  }`}>{s.output}</pre>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-3">
         {/* left column: policies */}

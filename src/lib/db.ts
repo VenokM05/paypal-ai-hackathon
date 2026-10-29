@@ -111,6 +111,13 @@ export function deletePolicy(id: string) {
   getDb().prepare("DELETE FROM policies WHERE id = ?").run(id);
 }
 
+/** Wipe the transactional history (audit + approvals); keeps agents and policies. */
+export function clearLedger() {
+  const d = getDb();
+  d.prepare("DELETE FROM audit").run();
+  d.prepare("DELETE FROM approvals").run();
+}
+
 export function newPolicyId() {
   return newId();
 }
