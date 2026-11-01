@@ -219,15 +219,17 @@ let cached: PayPalGateway | null = null;
 export function getGateway(): PayPalGateway {
   if (cached) return cached;
   const mode = (process.env.PAYPAL_MODE || "mock").toLowerCase();
-  if (
-    mode === "live" &&
-    process.env.PAYPAL_CLIENT_ID &&
-    process.env.PAYPAL_SECRET
-  ) {
-    cached = new LiveGateway(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_SECRET);
+  // Both names are accepted on purpose: `.env.example` and the README document
+  // PAYPAL_CLIENT_SECRET, while PAYPAL_SECRET is what earlier setups used.
+  // Reading only one made a correctly-configured judge silently land on mock.
+  const secret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET;
+  if (mode === "live" && process.env.PAYPAL_CLIENT_ID && secret) {
+    cached = new LiveGateway(process.env.PAYPAL_CLIENT_ID, secret);
   } else {
     if (mode === "live") {
-      console.warn("[guardian] PAYPAL_MODE=live but PAYPAL_CLIENT_ID/SECRET missing → falling back to mock");
+      console.warn(
+        "[guardian] PAYPAL_MODE=live but PAYPAL_CLIENT_ID/PAYPAL_CLIENT_SECRET missing → falling back to mock",
+      );
     }
     cached = new MockGateway();
   }
