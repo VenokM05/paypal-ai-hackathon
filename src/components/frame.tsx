@@ -30,19 +30,31 @@ export function Brand({ small = false }: { small?: boolean }) {
   );
 }
 
-function StatusDot({ ok, label }: { ok: boolean; label: string }) {
+function StatusDot({ ok, label, tip }: { ok: boolean; label: string; tip: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.08em]"
+      className="tip tip-bare inline-flex items-center gap-1.5 text-[11px]"
+      data-tip={tip}
+      tabIndex={0}
       style={{ color: ok ? "var(--allow)" : "var(--ink-3)" }}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "" : "anim-breathe"}`} style={{ background: ok ? "var(--allow)" : "var(--ink-4)" }} />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: ok ? "var(--allow)" : "var(--ink-4)" }} />
       {label}
     </span>
   );
 }
 
-export function TopBar({ state, pending, title }: { state: State | null; pending: number; title: string }) {
+export function TopBar({
+  state,
+  pending,
+  title,
+  onHelp,
+}: {
+  state: State | null;
+  pending: number;
+  title: string;
+  onHelp: () => void;
+}) {
   const live = state?.paypalMode === "live";
   return (
     <header className="sticky top-0 z-20 flex h-12 items-center gap-4 border-b border-line bg-canvas/95 px-4 backdrop-blur-sm sm:px-6">
@@ -58,40 +70,65 @@ export function TopBar({ state, pending, title }: { state: State | null; pending
             style={{ background: "var(--hold-wash)", color: "var(--hold)" }}
           >
             <Icon.clock size={12} />
-            {pending} awaiting
+            {pending} waiting for you
           </span>
         )}
         <span className="hidden items-center gap-4 sm:flex">
-          <StatusDot ok={!!live} label={state ? `paypal ${state.paypalMode}` : "connecting"} />
-          <StatusDot ok={!!state?.llm} label={state ? (state.llm ? "llm" : "heuristic") : ""} />
+          <StatusDot
+            ok={!!live}
+            label={state ? (live ? "PayPal sandbox" : "PayPal mock") : "connecting"}
+            tip={
+              live
+                ? "Guardian is calling the real PayPal sandbox API. Approved payments create live order ids."
+                : "Mock mode: PayPal-shaped responses, no account or key needed. Same rules, same decisions."
+            }
+          />
+          <StatusDot
+            ok={!!state?.llm}
+            label={state ? (state.llm ? "LLM risk model" : "Heuristic risk model") : ""}
+            tip={
+              state?.llm
+                ? "A language model is reading each request for scam and injection language. It can only add suspicion."
+                : "No LLM key, so deterministic patterns are scoring risk. Rules are unaffected either way."
+            }
+          />
         </span>
+        <button className="btn btn-quiet btn-sm" onClick={onHelp}>
+          <Icon.help size={12} />
+          <span className="hidden sm:inline">How this works</span>
+        </button>
       </div>
     </header>
   );
 }
 
 export function StatusBar({ state }: { state: State | null }) {
-  const cells: [string, string][] = state
+  const cells: [string, string, string][] = state
     ? [
-        ["engine", `${state.policies.filter((p) => p.enabled).length}/${state.policies.length} rules`],
-        ["agents", String(state.agents.length)],
-        ["events", String(state.audit.length)],
-        ["ledger", "sqlite · local"],
-        ["transport", "mcp stdio"],
+        ["Rules", `${state.policies.filter((p) => p.enabled).length}/${state.policies.length} active`, "Limits an agent may not cross. Disabled rules are counted but not enforced."],
+        ["Agents", String(state.agents.length), "AI agents Guardian has seen. Each one has a trust level that scopes what it may attempt."],
+        ["Requests", String(state.audit.length), "Decisions recorded on this machine since the ledger was last cleared."],
+        ["Ledger", "local SQLite", "The audit file lives at ./data/guardian.db. Gitignored, never uploaded."],
+        ["Agent link", "MCP", "Model Context Protocol over stdio — the only way an agent reaches PayPal here."],
       ]
-    : [["status", "loading"]];
+    : [["Status", "loading", "Reading the local ledger."]];
   return (
     <footer className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-line bg-canvas/95 px-4 py-1.5 backdrop-blur-sm sm:px-6">
-      {cells.map(([k, v]) => (
-        <span key={k} className="text-[10.5px]">
-          <span className="uppercase tracking-[0.08em] text-ink-4">{k}</span> <span className="num text-ink-3">{v}</span>
+      {cells.map(([k, v, tip]) => (
+        <span key={k} className="text-[11px]">
+          <span className="tip tip-bare text-ink-4" data-tip={tip} tabIndex={0}>
+            {k}
+          </span>{" "}
+          <span className="num text-ink-3">{v}</span>
         </span>
       ))}
-      <span className="ml-auto hidden items-center gap-1.5 text-[10.5px] text-ink-4 lg:flex">
+      <span className="ml-auto hidden items-center gap-1.5 text-[11px] text-ink-4 lg:flex">
         <kbd className="kbd">1</kbd>
         <span>–</span>
         <kbd className="kbd">4</kbd>
         <span>sections</span>
+        <kbd className="kbd">?</kbd>
+        <span>help</span>
       </span>
     </footer>
   );

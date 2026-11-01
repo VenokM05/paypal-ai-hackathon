@@ -52,8 +52,9 @@ Last-resort fallback: deploy on **Vercel** instead (zero config for Next.js, but
 - Open `https://agent-guardian.onrender.com` (the exact URL is on the service's dashboard page).
 - Free tier **sleeps after 15 min** of no traffic → wake takes about a minute. **Always pre-warm it before you record or before sending judges the link.**
 - The SQLite ledger sits on Render's **ephemeral disk**: a redeploy (and some restarts) resets the audit trail to empty. Harmless — judges land on a clean board with the 6 seeded policies — just don't promise anyone persistent history.
-- Click the coral **Rogue-agent drain** card. The audit timeline must fill with blocked / held / executed rows.
-- Click **↺ clear ledger** when done so the next visitor sees a clean board.
+- Click **Run** on the **Rogue-agent drain** row. The trace must fill with ten steps and the header chips must read `blocked / held / executed`; the Audit Trail tab shows the same rows with mock refs (`ORDER-…`).
+- Click **clear ledger** (top-right of the Threat Lab panel) when done so the next visitor sees a clean board.
+- On the hosted build the **Friendly flow** row behaves *better* than it does in live mode — mock mode has no 403 products, so it shows the intended hold → approve → instant path. See Part B0 trap 2 before recording that scenario locally.
 
 ### A3. Why the hosted demo runs in mock mode (this is a feature, not a compromise)
 
@@ -61,99 +62,217 @@ Your sandbox `CLIENT_ID`/`SECRET` must **never** go into a public cloud service'
 
 ---
 
-## Part B — Demo video (target: 2:30–3:00, hard cap 3:00)
+## Part B — Demo video (target 2:50, hard cap 3:00)
 
-### B1. Pre-flight checklist (do all of it, in this order)
+> **Everything in this script was run against your live sandbox on 2026-11-01.** The counts,
+> risk scores, order ids and rule names below are what the console actually produces today, so
+> nothing you say can contradict what the judge sees. If you change policies before recording,
+> re-run the scenarios and update the numbers — that is the one way this script goes stale.
 
-- [ ] `cd D:/Hackaton/paypal-ai-hackathon` and run `npm run dev` — no other dev servers running, port 3000 free.
-- [ ] Confirm `.env.local` still has `PAYPAL_MODE=live` + your sandbox keys (it does; I verified live mode end-to-end).
-- [ ] Browser: `http://localhost:3000`, **zoom 100%**, window maximised, nothing else on screen. Close Slack/WhatsApp/Teams. Turn off notifications (Windows → Settings → Notifications → temporarily off, or Focus Assist).
-- [ ] Dashboard: click **↺ clear ledger** so the board starts empty.
-- [ ] Tab: **Threat Lab** (the default).
-- [ ] **Win+G** → open the Game Bar capture overlay *once now* to check the mic icon isn't muted and the record button works. Press `Win+Alt+R` to start/stop recording. Video lands in `C:\Users\Venok\Videos\Captures`.
-- [ ] If Game Bar refuses (it needs the Xbox app service running): install **OBS** → Sources: *Window Capture* → Chrome → `localhost:3000`, Audio: *Desktop Audio* + *Mic/Aux* → Start Recording. OBS also lets you crop, which Game Bar can't.
-- [ ] Say your name + project into the recording once, then delete that take — this proves your mic actually captured audio before you record the real one.
+### B0. What I verified, and the three traps
 
-### B2. Script — read it close to verbatim
+Verified output (fresh ledger, `PAYPAL_MODE=live`, the 6 seeded policies):
 
-Timecodes are cumulative from record. Words in *(parentheses)* are actions, not narration. Total ≈2:45.
+| Scenario | Steps | Blocked | Held | Executed | Notes |
+|---|---|---|---|---|---|
+| Rogue-agent drain | 10 | 5 | 2 | 3 | 3 real sandbox order ids land on screen |
+| Prompt injection | 4 | 1 | 2 | 0 | step 01 is the email itself, not a decision |
+| Friendly flow | 5 | 0 | 2 | 0 | **do not record this in live mode** |
+
+Three traps, all confirmed by running them:
+
+1. **The rogue scenario approves its own hold.** Step 04 is `Scenario: attacker
+   social-engineers ONE careless approval` — the code grants it server-side (`decideApproval`),
+   which is *why* you get a real PayPal order id on screen. Do **not** tell the audience you are
+   clicking Approve, and do not go hunting for that item in the queue; it is already in
+   **Decided**. The script below narrates it correctly.
+2. **Friendly flow looks broken in live mode.** Its `search_transactions` and `send_invoice`
+   calls hit the 403 `NOT_AUTHORIZED` wall (those optional products are off on your sandbox app),
+   so steps 01 and 04 render `⚠️ Guardian allowed this action, but the PayPal live API rejected
+   it`. Worse, because step 04's invoice never succeeds, the recipient is never recorded as
+   known, so step 05 — titled "→ instant" — comes back **HELD**. Honest demo, ugly on camera.
+   Either skip it (recommended) or record it in a separate mock-mode take.
+3. **Adding a policy mid-recording changes later verdicts.** If you compile the `$75` rule and
+   *then* run the attacks, my table above no longer matches your screen. So: Policies beat
+   first, delete the test rule immediately, then run the attacks.
+
+### B1. Pre-flight (all of it, in order)
+
+- [ ] `PAYPAL_MODE=live` in `.env.local` — it is set right now, and `/api/state` reports `paypalMode=live`. Keep the keys out of the shot; never open `.env.local` on camera.
+- [ ] `cd D:/Hackaton/paypal-ai-hackathon` → `npm run dev`, port 3000 free, no other dev servers. For a steadier frame use `npm run build && npm run start` instead.
+- [ ] Browser maximised, **zoom 100%**, nothing else on screen. Notifications off (Focus Assist).
+- [ ] Open `http://localhost:3000`, press **4** → Audit Trail → confirm it says **No events yet**. If not, click **clear ledger** (top-right of the Threat Lab panel; clears audit + approvals, keeps the 6 policies).
+- [ ] Confirm the rail header reads **6 active rules** in the Decision path strip. That is your anchor for the Policies beat.
+- [ ] `Win+G` → check the mic is unmuted and record works (`Win+Alt+R`). Video lands in `C:\Users\Venok\Videos\Captures`. If Game Bar refuses, use OBS with *Window Capture* → Chrome → `localhost:3000`, plus Desktop Audio + Mic/Aux.
+- [ ] Say your name and project into the mic once, play it back, then delete that take. Do not skip this — Game Bar is known to record silent video.
+- [ ] Decide now, before recording: the rogue scenario will create **three real PayPal sandbox orders** (status `CREATED`, nothing captured, no money actually moves). That is the proof you want on camera. Sandbox only, and it is your own account.
+
+### B2. Script — read close to verbatim
+
+Total ≈2:50. Words in *(parentheses)* are actions. Tab keys are `1` Threat Lab, `2` Approvals,
+`3` Policies, `4` Audit Trail — using the keyboard on camera looks sharper than hunting for the
+rail, and the URL hash updates so the state is shareable.
 
 ---
 
 **0:00–0:18 · The problem**
 
-> "Agentic AI is now moving real money. PayPal's own agent toolkit lets an LLM create orders, send invoices, open disputes — and if that agent gets prompt-injected, or simply loops, there's nothing between the model and your wallet. Agent Guardian is that layer. It's a policy engine, a human approval queue, and an audit trail that sits *in front of* PayPal, exposed to the agent over MCP — so the agent never talks to PayPal directly."
+*(Dashboard open on Threat Lab. Mouse idle, on the Decision path strip.)*
 
-*(Show the dashboard, mouse idle. Don't click yet.)*
+> "Agentic AI is now moving real money. PayPal's own agent toolkit lets an LLM create orders,
+> send invoices, open disputes — and if that agent gets prompt-injected, or simply loops, there
+> is nothing between the model and your wallet. Agent Guardian is that layer: a policy engine,
+> a risk model, a human approval queue and an audit trail, sitting in front of PayPal and
+> exposed to the agent over MCP. The agent never talks to PayPal directly."
 
-**0:18–0:40 · The rulebook**
+*(Optional: run the cursor across the five stages — Agent → Policy engine → Risk model →
+Approval → PayPal.)*
 
-> *(Click **Policies**.)*
-> "These are the guardrails. Deterministic, human-readable rules — amount limits, a daily total cap, velocity limits, allow and blocklists, and a rule that any first-ever payment to a new recipient needs a human. Notice two things: every rule is toggleable, and…"
+**0:18–0:42 · The rulebook**
 
-*(Type this **exact** sentence into the natural-language policy box on the Policies tab, then submit — I verified it compiles on camera with no LLM key:)*
+*(Press `3` for Policies.)*
 
-> "No payment over $75 without approval"
+> "These are the guardrails. Deterministic, human-readable: a two-hundred-dollar single-payment
+> ceiling, a five-hundred-dollar daily total, three transactions per minute, recipient
+> allow and blocklists, a rule that any first-ever payment to a new recipient needs a human, and
+> a read-only tier for agents we do not trust. Every one is toggleable, and none of them depend
+> on a model being online."
 
-> "…I can add a rule in plain English. The AI compiles that sentence into a machine rule — amount limit, action *require approval*, applied to every agent. And if no LLM key is configured, a deterministic parser still produces the same rule. That matters: your guardrails must not depend on the model being online."
+*(Type this **exact** sentence into the natural-language box, then click **Compile & enforce**:)*
 
-**Critical detail:** with no API key set (which is how you'll demo, since the hosted build and a clean local clone both run zero-key), the fallback parser only understands **digit + currency-sign** amounts. Use `$75`, not "seventy-five dollars" — I tested both, and the spelled-out version honestly refuses instead of guessing. Every sentence below is verified to compile with no key: `No payment over $75 without approval` · `Max $400 per day` · `At most 5 payments per minute` · `Block paypa1-verify.support` · `Only pay studio-client@example.com` · `Freelance biller gets a $1,000 daily cap`.
+`No payment over $75 without approval`
 
-**0:40–1:35 · Attack 1 — the rogue agent (the money shot)**
+> "I can add a rule in plain English. The AI compiles that sentence into a machine rule — amount
+> limit, action *require approval*, scope *all agents* — and the active-rule count just went
+> from six to seven. With no LLM key configured, a deterministic parser still produces the same
+> rule, which matters: your guardrails must not depend on the model being reachable."
 
-> *(Click **Threat Lab**. Click the coral **Rogue-agent drain** card. Let it stream — do not rush it.)*
-> "This is a compromised shopping agent draining my account. Step one, an untrusted agent tries to pay — blocked, read-only policy, and the answer tells the model *not to retry*. Step two, a payment to a crypto-mule address…"
+*(Delete the new rule with its **delete** button. Say nothing while doing it — you are just
+resetting so the attack numbers below hold.)*
 
-*(Wait for the HELD row; note the `ap_…` approval id on screen.)*
+**0:42–1:40 · Attack 1 — the rogue agent (the money shot)**
 
-> "…isn't blocked outright, it's **held**. An approval request with a risk score of 75. I approve that in the dashboard — and I shouldn't."
+*(Press `1`. Click **Run** on the **Rogue-agent drain** row. Let it stream — the trace fills
+step by step. Do not talk over it; wait for the ten rows and the header chips.)*
 
-*(Click **Approvals** → **Approve** on the held item → back to **Audit**.)*
+> "This is a compromised shopping agent draining my account, and every step here is a real tool
+> call through the same engine a live agent uses."
 
-> "That was a careless human. Guardian executed it — and look, this is the real PayPal **sandbox** order id, read it off the screen, `…` — created against `api-m.sandbox.paypal.com`. The guardrail is not a mock." *(Say the id you actually see; each run differs. If you recorded in mock mode, say "Sandbox order ORDER-… in mock mode" instead and move on.)*
+*(Point at rows 01–02.)*
 
-*(Point at the next rows as they appear.)*
+> "An untrusted agent tries to pay. Blocked — risk sixty, two rules, including 'untrusted agents
+> are read-only' — and the answer it gets back tells the model explicitly **do not retry**. Same
+> again when it tries a second recipient."
 
-> "Now the loop. Payments three and four go through, and payment number five in the same minute hits the velocity rule and stops cold. Then a four-hundred-and-fifty dollar gift-card sweep: risk score one hundred, four rules fire at once, blocked. The agent had full API access the whole time — and never got past the layer."
+*(Row 03.)*
 
-**1:35–2:10 · Attack 2 — prompt injection**
+> "A trusted agent pays a crypto-mule address. That is not an outright block, it's a **hold**:
+> risk seventy-five, first-ever-recipient rule. And this is the part I want to be honest about —
+> step four is me simulating a careless human. The scenario grants that approval, and look what
+> Guardian returns."
 
-> *(Click **↺ clear ledger**. Click the violet **Prompt injection** card.)*
-> "Second attack, different shape. This is an email the agent was asked to process. It reads 'PayPal Security', it says the account owner already approved it, it says *ignore previous instructions* and *do not tell the user*, and it cites a case number. A model that trusts its own context window pays three hundred and eighty dollars to a gift-card address."
+*(Row 04 — read the id off the screen; it changes every run.)*
 
-*(Let the rows render. The $380 is **HELD**, risk 95 — read the risk-signal line out loud, it's the best sentence on the screen.)*
+> "`3UD96066AP331541A` — that is a **real PayPal sandbox order id**, created against
+> `api-m.sandbox.paypal.com`. Not a mock, not a string I made up. A guardrail that cannot execute
+> is not a guardrail."
 
-> "Guardian never took the model's word for it. It inspected the tool call before it could become an HTTP request. Risk ninety-five, and look at the signals: *instruction-override attempt, instructions to bypass the user, claimed pre-approval* — those are the email's own words, flagged as attack markers, not as payment context. The $380 is held for a human, so the money cannot move. The next step, an invoice through the untrusted agent, is a flat **block** at risk one hundred — read-only policy. And the sneaky retry at one hundred ninety dollars, deliberately under the amount ceiling, still gets caught by the new-recipient rule and held. Note what I *didn't* do: no fine-tuning, no model-side safety training, no reliance on the agent behaving."
+*(Rows 05–08.)*
 
-**2:10–2:35 · The proof it's real**
+> "Now the loop. Payments three and four go straight through — same recipient is known now, so
+> they pass. Payment five in the same minute hits the velocity rule and stops cold, risk
+> sixty-five, 'more than three transactions per minute looks like a runaway loop'. Six does too.
+> The agent had full API access the whole time and could not get past the layer."
 
-> *(Click **Audit** → point at the `paypalRef` column.)*
-> "Every decision — pass, held, blocked, executed — is written to a local SQLite ledger with the matched rule ids and the risk score. That's the artifact a merchant, or an insurer, or PayPal's own risk team would need after the fact: not 'the model decided', but 'rule seven blocked it, at this timestamp, and here's the approval trail'.
-> *(Click **Approval queue** if empty → skip.)*
-> The MCP server is real — `npm run guardian:mcp` in any agent config, and the agent sees PayPal tools that it cannot bypass."
+*(Row 09.)*
+
+> "A four-hundred-and-fifty-dollar gift-card sweep: risk **one hundred**, four rules fire at
+> once — amount ceiling, daily total, velocity, new recipient. Blocked outright."
+
+*(Row 10.)*
+
+> "And the last shot — a dispute claim for an item that was already delivered, 'item not
+> received, refund immediately'. Opening a dispute is a legal action, so it is always held for a
+> human. Ten requests: **five blocked, two held, three executed** — those are the chips at the
+> top of the trace."
+
+**1:40–2:15 · Attack 2 — prompt injection**
+
+*(Click **clear ledger**. Click **Run** on the **Prompt injection** row.)*
+
+> "Different shape. This is an email the agent was asked to process — row one is the email
+> itself. It signs as 'PayPal Security' from `paypa1-verify` with a one instead of an L, it
+> claims the owner already approved it, it says *ignore previous instructions* and *do not tell
+> the user*, and it cites a case number. A model that trusts its own context window pays three
+> hundred and eighty dollars to a gift-card farm."
+
+*(Let the rows render. Point at row 02's HELD chip.)*
+
+> "Guardian never took the model's word for it. It inspected the tool call before it could ever
+> become an HTTP request. Held, risk ninety-five. And the next step — the same invoice pushed
+> through the untrusted agent — is a flat block at risk one hundred. Then the sneaky retry at
+> one hundred ninety dollars, deliberately under the two-hundred ceiling, still gets held by the
+> new-recipient rule."
+
+*(Press `4` → click the top audit row to expand it, so the Risk signals sentence is on screen.)*
+
+> "This is the line I care about. Risk signals: *instruction-override attempt, instructions to
+> bypass the user, claimed pre-approval*. Those are the email's own words, classified as attack
+> markers — not as payment context. No fine-tuning, no model-side safety training, no reliance
+> on the agent behaving."
+
+**2:15–2:35 · The receipts, and the human**
+
+*(Still on Audit Trail. Let the columns read: time, decision, agent, tool, what was asked,
+risk, PayPal ref.)*
+
+> "Every decision — pass, held, blocked, executed — is written to a local SQLite ledger with the
+> matched rule ids, the risk score and the PayPal reference. That is the artifact a merchant, an
+> insurer, or PayPal's own risk team needs afterwards: not 'the model decided', but 'rule seven
+> blocked it, at this timestamp, here is the approval trail'. And the ledger is gitignored, so
+> your real history never leaves your machine."
+
+*(Press `2` for Approvals. There are two held items — the $380 and the $190. Click **Deny** on
+the $380.)*
+
+> "The queue is live. Two requests are waiting on me. This one is the injected payment —
+> **deny**, and the agent is told not to retry. Note I'm not approving it; approving would fire
+> the original PayPal call for real, which is exactly what Guardian is here to make deliberate."
 
 **2:35–2:50 · Close**
 
-> *(Optional: `git clone` / `npm i && npm run dev` on a second terminal, or show the hosted URL.)*
-> "It runs with zero API keys, it runs against the real PayPal sandbox with one click of credentials, the repo is MIT-licensed and public, and there's a hosted demo at the URL in the README. Agent Guardian — the guardrail between agentic AI and your money. Thanks."
+*(Press `1`. In Custom probe, type a recipient, leave the defaults, click **Evaluate
+decision**. Verified result: HELD, risk 50.)*
 
-### B3. Recording rules that keep it under 3 minutes
+> "And anyone can try it: this probe dry-runs an arbitrary action through the same engine —
+> rules that fire, risk score, what the agent is told — with nothing written to the ledger and
+> nothing sent to PayPal. It runs with zero API keys in mock mode, it runs against the real
+> PayPal sandbox with one click of credentials, the repo is MIT and public, and there's a hosted
+> demo at the link in the README. Agent Guardian — the guardrail between agentic AI and your
+> money. Thanks."
 
-- Record in **one take** if you can; mistakes are fine and human, a dead 20 seconds is not.
-- Never narrate while the scenario is streaming — the text appears on screen; pause and let it.
-- If an attack behaves differently than the script (counters, ledger state), **keep recording** and adapt: "and here it also fires the daily-total rule." Only cut if the page actually errors.
-- **Recovery if something breaks mid-take:** click **↺ clear ledger** and re-launch the scenario. That fixes 90% of demo weirdness (shared velocity counters between scenarios).
+### B3. Recording rules that keep it under three minutes
+
+- One take if you can. Mistakes are fine and human; twenty dead seconds is not.
+- Never narrate over a streaming scenario — the rows are appearing on screen; pause and let them.
+- If a verdict differs from the script (velocity counters are the usual culprit), **keep
+  recording** and adapt: "and here it also fires the daily-total rule." Only cut if the page
+  actually errors.
+- Recovery if anything wedges: click **clear ledger** and re-run. That fixes almost all
+  demo weirdness, because the velocity and daily-total counters are shared across scenarios.
+- The UI is dark on purpose and colour is reserved for verdicts — red means blocked, amber means
+  held. Do not add browser zoom above 100%; the type scale is tuned for it.
 
 ### B4. Fallbacks
 
 | Problem | Do this |
 |---|---|
-| Live PayPal call errors on camera | Switch to mock mode (`PAYPAL_MODE=mock` in `.env.local`, restart `npm run dev`) and re-record Part B's 0:40–1:35 segment — mock output is identical in shape. Never say "the demo broke". |
-| `localhost:3000` slow / dev-server hiccup | `npm run build && npm run start` is faster and steadier for recording. |
-| Render URL won't wake | Pre-warm it 5 min before recording; or show local only and paste the URL in the submission text. |
-| No audio in the file | Game Bar silently drops the mic. Use OBS with Desktop Audio + Mic/Aux and monitor once before recording. |
-
----
+| Live PayPal call errors on camera | Set `PAYPAL_MODE=mock` in `.env.local`, restart `npm run dev`, re-record 0:42–1:40. Mock output is identical in shape and says `Sandbox order ORDER-…`. Never say "the demo broke". |
+| Rogue chips do not read 5/2/3 | A stale ledger. **clear ledger**, re-run, and re-read the numbers off the screen instead of the script. |
+| Risk scores look different | You still have the `$75` test rule in place, or a recipient got marked known. Delete the test rule, **clear ledger**, re-run. |
+| `localhost:3000` stutters | `npm run build && npm run start` is steadier for recording than the dev server. |
+| Render URL will not wake | Pre-warm it five minutes before recording, or show local only and paste the URL in the submission text. |
+| No audio in the file | Game Bar silently drops the mic. Use OBS with Desktop Audio + Mic/Aux, monitor once, then re-record. |
 
 ## Part C — Submission text (paste-ready, ≈2 min of typing)
 
@@ -185,12 +304,18 @@ Repo: `https://github.com/VenokM05/paypal-ai-hackathon` · Hosted demo: `<your-r
 
 ## Part D — Still open on the clock
 
+Code, docs and the demo script are done and pushed. Devpost registration is done. What is left is
+two things only you can do, then one optional polish pass.
+
 | Item | Who | Est. |
 |---|---|---|
-| Render deploy (Part A) | you | 12 min |
-| Record demo (Part B) | you | 25 min incl. retakes |
-| Register on Devpost as submitter + **confirm the deadline** (I can't read the page; 403s on fetch) | you | 5 min |
-| AG Grid swap for the audit table (sponsor prize visibility) | me | 45 min |
-| Final README polish with the hosted URL + video link | me, after A/B | 10 min |
+| Render deploy (Part A) — gives judges a clickable URL | you | 12 min |
+| Record the demo (Part B, script verified against the live engine) | you | 25 min incl. retakes |
+| Confirm on the Devpost submission form: exact deadline, and the video length / file-size cap (I can't read the page; 403s on fetch) | you | 3 min |
+| Optional: enable **Invoicing** + **Transaction Search** on the sandbox app (PayPal dashboard → Apps → your app → Manage API Credentials → Feature Permissions) so the Friendly flow demo passes in live mode | you | 5 min |
+| AG Grid swap for the audit table (sponsor-prize visibility) | me | 45 min |
+| Final README + Part C polish with the hosted URL and video link | me, after A/B | 10 min |
+| Decide on the repo name — it contains "PayPal", which hackathon trademark rules often dislike (`agent-guardian` is the safe rename) | you | 2 min |
 
-Order I'd choose: **A → B → then let me do the AG Grid swap** while you write the submission, because the hosted URL and the video are hard requirements and the sponsor table is a nice-to-have.
+Order I'd choose: **A → B → then let me do the AG Grid swap** while you fill in the submission
+form, because the hosted URL and the video are hard requirements and the sponsor table is not.

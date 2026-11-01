@@ -67,28 +67,31 @@ export type ScenarioResult = { kind: string; steps: ScenarioStep[] };
 /**
  * `var(--*)` value paired with a short human label.
  * `wash` is the tinted background used for chips and left rails.
+ * `tip` is the one-sentence definition shown on hover — the console's vocabulary
+ * is security vocabulary, so every state carries its own translation.
  */
 export type Tone = {
   color: string;
   wash: string;
   label: string;
+  tip: string;
 };
 
 const TONES: Record<string, Tone> = {
-  allow: { color: "var(--allow)", wash: "var(--allow-wash)", label: "allowed" },
-  executed: { color: "var(--allow)", wash: "var(--allow-wash)", label: "executed" },
-  approved: { color: "var(--allow)", wash: "var(--allow-wash)", label: "approved" },
-  block: { color: "var(--block)", wash: "var(--block-wash)", label: "blocked" },
-  denied: { color: "var(--block)", wash: "var(--block-wash)", label: "denied" },
-  require_approval: { color: "var(--hold)", wash: "var(--hold-wash)", label: "held" },
-  pending: { color: "var(--hold)", wash: "var(--hold-wash)", label: "pending" },
-  approval_decided: { color: "var(--accent)", wash: "var(--accent-wash)", label: "decided" },
-  rejected: { color: "var(--hold)", wash: "var(--hold-wash)", label: "api rejected" },
-  neutral: { color: "var(--ink-3)", wash: "var(--raised)", label: "info" },
+  allow: { color: "var(--allow)", wash: "var(--allow-wash)", label: "Allowed", tip: "Passed every rule, so the agent was told to continue." },
+  executed: { color: "var(--allow)", wash: "var(--allow-wash)", label: "Executed", tip: "Guardian made the PayPal call itself, after a human approved it." },
+  approved: { color: "var(--allow)", wash: "var(--allow-wash)", label: "Approved", tip: "A human said yes in the Approvals queue." },
+  block: { color: "var(--block)", wash: "var(--block-wash)", label: "Blocked", tip: "A rule refused it outright. The agent is told not to retry." },
+  denied: { color: "var(--block)", wash: "var(--block-wash)", label: "Denied", tip: "A human said no in the Approvals queue." },
+  require_approval: { color: "var(--hold)", wash: "var(--hold-wash)", label: "Held", tip: "Paused before PayPal, waiting for a person in Approvals." },
+  pending: { color: "var(--hold)", wash: "var(--hold-wash)", label: "Waiting", tip: "Still needs your decision — nothing has moved yet." },
+  approval_decided: { color: "var(--accent)", wash: "var(--accent-wash)", label: "Decision", tip: "The audit row recording that approve/deny moment." },
+  rejected: { color: "var(--hold)", wash: "var(--hold-wash)", label: "PayPal refused", tip: "Guardian allowed it, but the PayPal API answered with an error." },
+  neutral: { color: "var(--ink-3)", wash: "var(--raised)", label: "Info", tip: "Context, not a decision." },
 };
 
 export function tone(key: string): Tone {
-  return TONES[key] ?? { ...TONES.neutral, label: key.replace(/_/g, " ") };
+  return TONES[key] ?? { ...TONES.neutral, label: key.replace(/_/g, " "), tip: `Internal state: ${key.replace(/_/g, " ")}.` };
 }
 
 export const riskTone = (n: number): Tone =>
@@ -131,12 +134,55 @@ export type TabId = "lab" | "approvals" | "policies" | "audit";
 
 /** Audit filters, in chip order. `all` is the implicit rest, not a real outcome. */
 export const AUDIT_FILTERS = [
-  { id: "all", label: "all" },
-  { id: "block", label: "blocked" },
-  { id: "require_approval", label: "held" },
-  { id: "executed", label: "executed" },
-  { id: "allow", label: "allowed" },
-  { id: "approval_decided", label: "decisions" },
+  { id: "all", label: "All" },
+  { id: "block", label: "Blocked" },
+  { id: "require_approval", label: "Held" },
+  { id: "executed", label: "Executed" },
+  { id: "allow", label: "Allowed" },
+  { id: "approval_decided", label: "Decisions" },
 ];
 
 export const matchesFilter = (e: Audit, f: string) => f === "all" || e.outcome === f;
+
+/**
+ * Tool names are the API's, so they stay in the audit trail — but nobody reads
+ * `send_invoice` as a sentence. This is the human version, used everywhere a
+ * tool is described rather than logged.
+ */
+export const TOOL_LABEL: Record<string, string> = {
+  create_payment: "make a payment",
+  capture_payment: "capture a payment",
+  send_invoice: "send an invoice",
+  open_dispute: "open a dispute",
+  search_transactions: "search transactions",
+  guardian_check_approval: "check on an approval",
+  guardian_list_agents: "list the agents",
+};
+
+export const toolLabel = (t: string) => TOOL_LABEL[t] ?? t.replace(/_/g, " ");
+
+/** Rule kinds, in the words a person would use to describe what they enforce. */
+export const RULE_KIND: Record<string, { label: string; tip: string }> = {
+  amount_limit: { label: "Payment size", tip: "Caps what a single payment can be for." },
+  daily_total_limit: { label: "Daily total", tip: "Caps the money moved in one calendar day." },
+  velocity_limit: { label: "Speed", tip: "Caps how many payments fit in one minute." },
+  recipient_allowlist: { label: "Only these recipients", tip: "Nobody else may be paid, whatever the amount." },
+  recipient_blocklist: { label: "Never these", tip: "Specific addresses are refused on sight." },
+  new_recipient_approval: { label: "New recipient", tip: "The first payment to anyone always needs a human." },
+  tool_whitelist: { label: "What it may call", tip: "Scopes which PayPal tools an agent is allowed to use at all." },
+  approval_required_tools: { label: "Tools needing a human", tip: "These tools pause for approval even when a rule passes." },
+};
+
+/**
+ * Trust levels are engine vocabulary (`high` / `medium` / `untrusted`), which
+ * reads like a credit rating rather than a permission. This is what each level
+ * actually means for what an agent may do.
+ */
+export const TRUST_LEVEL: Record<string, { label: string; tip: string; kind: string }> = {
+  high: { label: "Trusted", tip: "May attempt payments and invoices on its own, within the rules.", kind: "allow" },
+  medium: { label: "Limited", tip: "May act, but its riskier requests get held for a person first.", kind: "pending" },
+  untrusted: { label: "Read-only", tip: "May look things up but cannot move money at all. Blocked on sight.", kind: "block" },
+};
+
+export const trustLevel = (t: string) =>
+  TRUST_LEVEL[t] ?? { label: t, tip: `Trust level set for this agent: ${t}.`, kind: "pending" };

@@ -28,6 +28,20 @@ function make(path: React.ReactNode, filled = false) {
 
 export const Icon = {
   shield: make(<path d="M12 3l7 2.8v5.4c0 4.4-2.9 8.2-7 9.8-4.1-1.6-7-5.4-7-9.8V5.8L12 3z" />),
+  /* the guide's own pair: a question and a book, same 24-unit grid */
+  help: make(
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.2a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.6" />
+      <path d="M12 17.4h.01" />
+    </>,
+  ),
+  book: make(
+    <>
+      <path d="M5 4.5h9a3 3 0 0 1 3 3V20a2.5 2.5 0 0 0-2.5-2.5H5V4.5z" />
+      <path d="M17 7.5h2v12.4h-4.5" />
+    </>,
+  ),
   flask: make(
     <>
       <path d="M9 3h6" />

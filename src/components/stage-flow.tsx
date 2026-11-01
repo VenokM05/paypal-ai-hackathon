@@ -11,11 +11,41 @@ export type StageCounts = {
 };
 
 const STAGES = [
-  { id: "agent", label: "Agent", sub: "MCP tool call", icon: Icon.cpu },
-  { id: "policy", label: "Policy engine", sub: "deterministic rules", icon: Icon.shield },
-  { id: "risk", label: "Risk model", sub: "heuristics + LLM", icon: Icon.activity },
-  { id: "human", label: "Approval", sub: "human in the loop", icon: Icon.inbox },
-  { id: "paypal", label: "PayPal", sub: "orders · invoices", icon: Icon.wallet },
+  {
+    id: "agent",
+    label: "Agent",
+    sub: "asks",
+    icon: Icon.cpu,
+    tip: "An AI agent calls one of Guardian's PayPal tools over MCP. It has no direct route to PayPal.",
+  },
+  {
+    id: "policy",
+    label: "Policy engine",
+    sub: "your rules",
+    icon: Icon.shield,
+    tip: "Checks the request against your rules. It can block outright, and no model can overrule it.",
+  },
+  {
+    id: "risk",
+    label: "Risk model",
+    sub: "scores it 0–100",
+    icon: Icon.activity,
+    tip: "Reads for scam patterns, pressure language and injection markers. It can raise suspicion, never lower a rule.",
+  },
+  {
+    id: "human",
+    label: "Approval",
+    sub: "you decide",
+    icon: Icon.inbox,
+    tip: "Risky requests wait here for a person. Nothing reaches PayPal until someone says yes.",
+  },
+  {
+    id: "paypal",
+    label: "PayPal",
+    sub: "only then",
+    icon: Icon.wallet,
+    tip: "Guardian makes the original call itself and records the order id that came back.",
+  },
 ] as const;
 
 function Node({
@@ -45,11 +75,13 @@ function Node({
         {stage.icon({ size: 15 })}
         {running && state === "flowing" && <span className="travel absolute inset-0" />}
       </span>
-      <span className="text-[11px] font-medium leading-tight text-ink-2">{stage.label}</span>
-      <span className="hidden text-[9.5px] leading-tight text-ink-4 sm:block">{stage.sub}</span>
+      <span className="tip tip-bare text-[11px] font-medium leading-tight text-ink-2" data-tip={stage.tip} tabIndex={0}>
+        {stage.label}
+      </span>
+      <span className="hidden text-[10.5px] leading-tight text-ink-4 sm:block">{stage.sub}</span>
       {count !== undefined && count > 0 && (
         <span
-          className="num rounded px-1 text-[10px] font-bold leading-tight"
+          className="num rounded px-1 text-[11px] font-bold leading-tight"
           style={{ color, background: `color-mix(in srgb, ${color} 12%, transparent)` }}
         >
           {count}

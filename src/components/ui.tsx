@@ -9,12 +9,15 @@ import { Icon } from "./icons";
 export function Section({
   title,
   meta,
+  help,
   right,
   children,
   className = "",
 }: {
   title: string;
   meta?: ReactNode;
+  /** One line that tells a newcomer what this section is for. */
+  help?: string;
   right?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -22,10 +25,18 @@ export function Section({
   return (
     <section className={className}>
       <header className="mb-2.5 flex items-baseline gap-3">
-        <h2 className="eyebrow shrink-0">{title}</h2>
+        <h2 className="eyebrow shrink-0">
+          {help ? (
+            <span className="tip" data-tip={help} tabIndex={0}>
+              {title}
+            </span>
+          ) : (
+            title
+          )}
+        </h2>
         {/* min-w-0 is what makes the truncate real: without it this text
             sets a floor and pushes the whole page wider than the viewport. */}
-        {meta && <span className="num min-w-0 flex-1 truncate text-[10px] text-ink-4">{meta}</span>}
+        {meta && <span className="num min-w-0 flex-1 truncate text-[11px] text-ink-4">{meta}</span>}
         <span className="ml-auto shrink-0">{right}</span>
       </header>
       {children}
@@ -38,23 +49,23 @@ export function Section({
 export function Chip({
   kind,
   label,
-  mono = true,
+  define = true,
   className = "",
 }: {
   kind: string;
   label?: string;
-  mono?: boolean;
+  /** Set false where the chip is decorative-countery and a tooltip would lie. */
+  define?: boolean;
   className?: string;
 }) {
   const t = tone(kind);
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.07em] ${
-        mono ? "num" : ""
-      } ${className}`}
+      className={`chip ${define ? "tip" : ""} ${className}`}
+      {...(define ? { "data-tip": t.tip, tabIndex: 0 } : {})}
       style={{ color: t.color, background: t.wash, boxShadow: `inset 0 0 0 1px ${hex(t.color, 0.28)}` }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: t.color }} />
+      <span className="dot" style={{ background: t.color }} />
       {label ?? t.label}
     </span>
   );
@@ -68,7 +79,7 @@ function hex(colorVar: string, alpha: number) {
 
 export function NeutralChip({ children }: { children: ReactNode }) {
   return (
-    <span className="num inline-flex items-center gap-1 rounded bg-raised px-1.5 py-0.5 text-[10px] text-ink-3">
+    <span className="num inline-flex items-center gap-1 rounded bg-raised px-1.5 py-0.5 text-[11px] text-ink-3">
       {children}
     </span>
   );

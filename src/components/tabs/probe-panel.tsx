@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { money as fmtMoney, tone, type State } from "@/components/console-model";
+import { useState, type ReactNode } from "react";
+import { money as fmtMoney, tone, toolLabel, trustLevel, type State } from "@/components/console-model";
 import { Icon } from "@/components/icons";
 import { Chip, RiskDial, Section } from "@/components/ui";
 import type { ProbeInput, ProbeResult } from "@/hooks/use-console";
 
 const TOOLS = ["create_payment", "send_invoice", "open_dispute", "search_transactions"];
+
+/** Form labels in reading size — the eyebrow style is for section furniture, not inputs. */
+const L = ({ children }: { children: ReactNode }) => (
+  <span className="mb-1 block text-[11px] font-medium text-ink-3">{children}</span>
+);
 
 const EMPTY = {
   agentId: "shopping-assistant",
@@ -41,32 +46,36 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
   const blocked = !form.recipient && form.tool !== "search_transactions";
 
   return (
-    <Section title="Custom probe" meta="dry run · no ledger write, no PayPal call">
+    <Section
+      title="Custom probe"
+      meta="dry run · nothing written to the ledger, no PayPal call"
+      help="Ask the engine what it would do with a request you type yourself. Same rules, same risk model, but it only answers."
+    >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
         <div className="panel p-3.5">
           <div className="grid gap-2.5 sm:grid-cols-2">
             <label className="block">
-              <span className="eyebrow mb-1 block">agent</span>
+              <L>Which agent is asking</L>
               <select className="field" value={form.agentId} onChange={(e) => set({ agentId: e.target.value })}>
                 {state.agents.map((a) => (
                   <option key={a.id} value={a.id} className="bg-panel">
-                    {a.id} · {a.trustLevel} trust
+                    {a.id} — {trustLevel(a.trustLevel).label.toLowerCase()}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block">
-              <span className="eyebrow mb-1 block">tool</span>
+              <L>What it wants to do</L>
               <select className="field" value={form.tool} onChange={(e) => set({ tool: e.target.value })}>
                 {TOOLS.map((t) => (
                   <option key={t} value={t} className="bg-panel">
-                    {t}
+                    {toolLabel(t)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block">
-              <span className="eyebrow mb-1 block">recipient</span>
+              <L>Recipient</L>
               <input
                 className="field"
                 placeholder="someone@example.com"
@@ -76,7 +85,7 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
             </label>
             <div className="grid grid-cols-[84px_minmax(0,1fr)] gap-2.5">
               <label className="block">
-                <span className="eyebrow mb-1 block">usd</span>
+                <L>Amount USD</L>
                 <input
                   className="field"
                   inputMode="decimal"
@@ -85,7 +94,7 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
                 />
               </label>
               <label className="block">
-                <span className="eyebrow mb-1 block">note</span>
+                <L>Note the agent attaches</L>
                 <input
                   className="field"
                   placeholder="try: asap, do not tell the user"
@@ -95,16 +104,23 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
               </label>
             </div>
           </div>
-          <button className="btn btn-primary mt-3 w-full sm:w-auto" onClick={run} disabled={busy || blocked}>
-            <Icon.play size={12} /> {busy ? "Evaluating…" : "Evaluate decision"}
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            <button className="btn btn-primary sm:w-auto" onClick={run} disabled={busy || blocked}>
+              <Icon.play size={12} /> {busy ? "Evaluating…" : "Evaluate decision"}
+            </button>
+            {blocked && (
+              <span className="text-[11px] text-ink-4">Add a recipient — the engine needs someone to pay.</span>
+            )}
+          </div>
         </div>
 
         <div className="panel p-3.5">
           {!result ? (
-            <p className="text-[12px] leading-relaxed text-ink-4">
-              The probe answers before anything is written: which rules fire, what risk score results, and
-              what the agent is told. Nothing here touches PayPal or the ledger.
+            <p className="hint">
+              Fill this in like a request an agent would send, then press <span className="text-ink-3">Evaluate
+              decision</span>. The answer is the same verdict the agent gets — which rules fired, the risk score,
+              and the reply it was given. Try <span className="num text-ink-3">$180</span> to a new address, or
+              the word <span className="text-ink-3">asap</span> in the note.
             </p>
           ) : (
             <div className="anim-fade-up space-y-3">
@@ -115,7 +131,7 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
               <p className="text-[12px] leading-relaxed text-ink-2">{result.explanation}</p>
               {!!result.matchedRules?.length && (
                 <div className="space-y-1 border-t border-line pt-2.5">
-                  <span className="eyebrow">rules matched</span>
+                  <span className="block text-[11px] font-medium text-ink-3">Rules that fired</span>
                   {result.matchedRules.map((r) => (
                     <p key={r} className="text-[11.5px] leading-snug" style={{ color: tone("block").color }}>
                       {r}
@@ -124,7 +140,7 @@ export function ProbePanel({ state, probe }: { state: State; probe: (i: ProbeInp
                 </div>
               )}
               {form.amount && form.recipient && (
-                <p className="num text-[10.5px] text-ink-4">
+                <p className="num text-[11px] text-ink-4">
                   hypothetical: {fmtMoney({ value: form.amount, currency_code: "USD" })} → {form.recipient}
                 </p>
               )}

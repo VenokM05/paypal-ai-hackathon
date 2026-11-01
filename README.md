@@ -43,7 +43,7 @@ npm run demo:friendly   # a well-behaved agent gets one hold, a human approval, 
 npm run demo:injection  # an agent obeys a prompt-injected email — Guardian flags every attempt
 ```
 
-Prefer no terminal? The dashboard has an **Attack console** bar — 🩸 rogue-agent drain, 💉 prompt injection, 🤝 friendly flow — that runs the same scenarios through the same engine and fills the audit trail live. **↺ clear ledger** resets history between demos (policies are kept).
+Prefer no terminal? The dashboard's **Threat Lab** tab runs the same three scenarios through the same engine and fills the audit trail live. **clear ledger** resets history between demos (policies are kept).
 
 `demo:friendly` waits for you to click **Approve** in the dashboard, then press Enter in the terminal. For a hands-free run: `npm run demo:friendly:auto`. `demo:rogue` is fully scripted and needs no interaction.
 
@@ -92,10 +92,13 @@ Set `OPENAI_API_KEY` (optionally `LLM_BASE_URL` / `LLM_MODEL`, any OpenAI-compat
 server/guardian-mcp.ts     MCP server — the only payment surface agents may call
 scripts/rogue-agent.ts     adversarial demo (runaway loop, scam recipients, dispute abuse)
 scripts/friendly-agent.ts  happy-path demo with human-in-the-loop approval
+scripts/injection-agent.ts agent that obeys a prompt-injected email
 src/lib/guardian/          engine · rules · risk · policy-compiler · llm helper
 src/lib/paypal/            gateway: LiveGateway (sandbox REST) + MockGateway
-src/app/                   Next.js dashboard (policies · approvals · audit · simulator)
-src/app/api/               /state /policies /approvals /preview
+src/components/            console: shell · frame · ui · tabs/ (one file per section)
+src/hooks/use-console.ts   polls /api/state and drives the tabs
+src/app/                   Next.js console — Threat Lab · Approvals · Policies · Audit
+src/app/api/               /state /policies /approvals /attack /preview /reset
 data/guardian.db           SQLite ledger (gitignored; npm run db:reset)
 ```
 

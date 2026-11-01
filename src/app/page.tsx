@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { TabId } from "@/components/console-model";
 import { MobileTabs, NAV, Rail } from "@/components/shell";
 import { StatusBar, TopBar } from "@/components/frame";
 import { Skeleton, Toaster } from "@/components/ui";
+import { HelpSheet } from "@/components/help";
+import { markTourSeen, Tour, TOUR_KEY } from "@/components/tour";
 import { ApprovalsTab } from "@/components/tabs/approvals";
 import { AuditTab } from "@/components/tabs/audit";
 import { PoliciesTab } from "@/components/tabs/policies";
@@ -12,6 +14,29 @@ import { ThreatLab } from "@/components/tabs/threat-lab";
 import { useConsole } from "@/hooks/use-console";
 
 const isTab = (v: string): v is TabId => NAV.some((n) => n.id === v);
+
+/**
+ * Whether this browser has already been shown the guided tour.
+ * Read through useSyncExternalStore rather than an effect: the server has no
+ * localStorage, so the only way to ask it without a hydration mismatch — and
+ * without a setState that cascades a second render — is a subscription with a
+ * server snapshot that says "seen". React re-checks it right after hydration.
+ */
+const subscribeNoStorageEvents = () => () => {};
+
+function useTourSeen(): boolean {
+  return useSyncExternalStore(
+    subscribeNoStorageEvents,
+    () => {
+      try {
+        return localStorage.getItem(TOUR_KEY) === "done";
+      } catch {
+        return true; // storage blocked — do not nag
+      }
+    },
+    () => true,
+  );
+}
 
 /** Tabs live in the URL hash so a demo state is shareable and Back works. */
 function useHashTab(fallback: TabId): [TabId, (t: TabId) => void] {
@@ -41,19 +66,36 @@ function useHashTab(fallback: TabId): [TabId, (t: TabId) => void] {
 export default function Console() {
   const { state, toast, ping, runScenario, decide, addPolicy, patchPolicy, clearLedger, probe } = useConsole();
   const [tab, setTab] = useHashTab("lab");
+  const [tourChoice, setTourChoice] = useState<number | null | undefined>(undefined);
+  const [help, setHelp] = useState(false);
+  const tourSeen = useTourSeen();
+  // undefined = the user hasn't chosen yet, so the app decides: first visit,
+  // and only once there is something real on screen to point at.
+  const tour = tourChoice === undefined ? (state && !tourSeen ? 0 : null) : tourChoice;
+  // Any exit counts as seen — finish, Skip, or Escape.
+  const closeTour = useCallback(() => {
+    markTourSeen();
+    setTourChoice(null);
+  }, []);
 
   // Number keys jump between sections, unless the user is typing in a field.
+  // While the tour is walking someone through it, the keys are the tour's.
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       const t = ev.target as HTMLElement | null;
       if (t && (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable)) return;
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      if (ev.key === "?") {
+        setHelp((h) => !h);
+        return;
+      }
+      if (tour !== null || help) return;
       const i = Number(ev.key) - 1;
       if (i >= 0 && i < NAV.length) setTab(NAV[i].id);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [setTab]);
+  }, [setTab, tour, help]);
 
   // Rail tabs move with the arrow keys, like every real tablist.
   const onRailKey = useCallback(
@@ -86,11 +128,11 @@ export default function Console() {
 
   return (
     <div className="min-h-screen" onKeyDown={onRailKey}>
-      <Rail tab={tab} setTab={setTab} counts={counts} />
+      <Rail tab={tab} setTab={setTab} counts={counts} onHelp={() => setHelp(true)} />
 
       <div className="flex min-h-screen flex-col md:pl-[216px]">
-        <TopBar state={state} pending={pending} title={title} />
-        <MobileTabs tab={tab} setTab={setTab} counts={counts} />
+        <TopBar state={state} pending={pending} title={title} onHelp={() => setHelp(true)} />
+        <MobileTabs tab={tab} setTab={setTab} counts={counts} onHelp={() => setHelp(true)} />
 
         <main
           id="panel"
@@ -102,18 +144,30 @@ export default function Console() {
           {!state ? (
             <Skeleton rows={4} />
           ) : tab === "lab" ? (
-            <ThreatLab state={state} runScenario={runScenario} clearLedger={clearLedger} probe={probe} ping={ping} />
+            <ThreatLab
+              state={state}
+              runScenario={runScenario}
+              clearLedger={clearLedger}
+              probe={probe}
+              ping={ping}
+              onStartTour={() => setTourChoice(0)}
+            />
           ) : tab === "approvals" ? (
             <ApprovalsTab state={state} decide={decide} goLab={() => setTab("lab")} />
           ) : tab === "policies" ? (
             <PoliciesTab state={state} addPolicy={addPolicy} patchPolicy={patchPolicy} />
           ) : (
-            <AuditTab state={state} />
+            <AuditTab state={state} goLab={() => setTab("lab")} />
           )}
         </main>
 
         <StatusBar state={state} />
       </div>
+
+      {help && (
+        <HelpSheet state={state} onClose={() => setHelp(false)} onReplay={() => { setHelp(false); setTourChoice(0); }} goTab={setTab} />
+      )}
+      {tour !== null && <Tour index={tour} setIndex={setTourChoice} onClose={closeTour} setTab={setTab} />}
 
       {toast && <Toaster msg={toast.msg} kind={toast.kind} />}
     </div>

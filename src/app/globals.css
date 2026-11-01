@@ -15,6 +15,11 @@
       the audit trail; cards with generous padding hide it.
    5. Every ink token clears WCAG AA on every surface it is used on
       (ratios noted inline). Verified with a contrast script, not by eye.
+   6. Density is for people who already know what they are looking at. A
+      first-time reader gets plain words, one explanation on demand, and a
+      visible next action — so the console teaches itself instead of
+      assuming a manual.
+
    ══════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -59,6 +64,11 @@
 
   /* focus ring, one style everywhere */
   --ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent);
+
+  /* guide layer: the only place a surface gets darkened, and it always means
+     "the app is showing you where to look" — never decoration */
+  --dim: hsl(218 34% 3% / 0.72);
+  --coach-w: 340px;
 }
 
 @theme inline {
@@ -139,13 +149,41 @@ body {
   border-radius: var(--r-md);
 }
 
-/* Section header: uppercase label at 10px, always the quietest thing nearby. */
+/* Section header. 11px, not 10: a first-time reader must be able to read the
+   labels, and 10px uppercase only works once you already know the vocabulary. */
 .eyebrow {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+}
+
+/* One-line explanation under a control. This is where the plain language lives. */
+.hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* Decision chip. Sentence case, no tracking: "HELD" reads as a shout,
+   "Held for you" reads as information. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* Identifiers, IDs, money, counts. */
@@ -294,12 +332,11 @@ textarea.field {
   top: 0;
   z-index: 2;
   background: var(--panel);
-  padding: 7px 12px;
+  padding: 8px 12px;
   text-align: left;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ink-3);
   border-bottom: 1px solid var(--line);
 }
@@ -324,6 +361,239 @@ textarea.field {
 /* Agent ids and scopes must never fold: a wrapped identifier reads as two rows. */
 .table .nowrap {
   white-space: nowrap;
+}
+
+/* ────────────────────────  guide layer  ────────────────────────
+   Three surfaces exist to teach the console: a hover definition, a one-time
+   tour, and a help sheet. All three stay inside the design system — same
+   panels, same hairlines, same ink — because a beige "getting started" box
+   would tell the reader the product was bolted on. */
+
+/* Hover/focus definition. Pure CSS: nothing to wire, nothing to keep in sync.
+   Positioned above by default; callers flip with .tip-below near a top edge. */
+.tip {
+  position: relative;
+  cursor: help;
+  text-decoration: underline;
+  text-decoration: var(--line-strong) dotted 1px;
+  text-underline-offset: 3px;
+}
+.tip::after {
+  content: attr(data-tip);
+  /* `none`, not just invisible: an absolutely-positioned 250px bubble still
+     generates a box, and near a viewport edge that box is enough to add a
+     horizontal scrollbar to the whole page on a narrow screen. */
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(2px);
+  z-index: 60;
+  width: max-content;
+  max-width: 250px;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: normal;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    display var(--dur-fast) allow-discrete;
+}
+.tip:hover::after,
+.tip:focus-visible::after {
+  display: block;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* The bubble appears from nothing, so the fade needs an explicit first frame. */
+@starting-style {
+  .tip:hover::after,
+  .tip:focus-visible::after {
+    opacity: 0;
+    transform: translateX(-50%) translateY(2px);
+  }
+}
+.tip-below::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translateX(-50%) translateY(-2px);
+}
+/* Column headers and cells define themselves quietly: no squiggle under a
+   header that is already styled as a label. */
+td .tip,
+th .tip,
+td.tip,
+th.tip {
+  cursor: help;
+  text-decoration: none;
+}
+
+/* Coachmark tour. The spotlight is pointer-events:none on purpose: dimming
+   the screen should focus attention, not imprison it. You can always click
+   straight through to the thing it is pointing at, or press Esc. */
+.spot {
+  position: fixed;
+  z-index: 55;
+  pointer-events: none;
+  border-radius: var(--r-md);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 9999px var(--dim);
+  transition:
+    top var(--dur-slow) var(--ease),
+    left var(--dur-slow) var(--ease),
+    width var(--dur-slow) var(--ease),
+    height var(--dur-slow) var(--ease);
+}
+.coach {
+  position: fixed;
+  z-index: 56;
+  width: min(var(--coach-w), calc(100vw - 24px));
+  padding: 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  box-shadow: 0 12px 32px -12px hsl(218 34% 2% / 0.9);
+}
+.coach-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.coach-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--raised);
+}
+.coach-dots i[aria-current="true"] {
+  background: var(--accent);
+  width: 14px;
+  border-radius: 999px;
+}
+
+/* Help sheet: a right-hand drawer plus a modal backdrop. Unlike the tour this
+   does block, because it is a document you read, not a thing you look at. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: var(--dim);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.sheet {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 46;
+  width: min(440px, 100vw);
+  overflow-y: auto;
+  border-left: 1px solid var(--line-strong);
+  background: var(--canvas);
+  padding: 16px 18px 40px;
+  animation: sheet-in var(--dur) var(--ease) both;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+.sheet h3 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+}
+/* Definition list = the glossary. Term column stays fixed so the eye can scan. */
+.terms {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: baseline;
+  font-size: 12px;
+}
+.terms dt {
+  color: var(--ink-1);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.terms dd {
+  margin: 0;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* First-run instructions. Numbered, because "read the docs" is not a next step. */
+.steps {
+  display: grid;
+  gap: 10px;
+  counter-reset: step;
+}
+.steps li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.steps li .n {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* Colour legend: what red and amber mean, stated once where it is first used. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* A chip already reads as a status; it wants the definition, not a squiggle. */
+.chip.tip {
+  text-decoration: none;
+}
+/* Same for anything sitting in a label column, where an underline fights the layout. */
+.tip-bare {
+  text-decoration: none;
 }
 
 /* ─────────────────────────────  motion  ───────────────────────────── */
@@ -413,8 +683,14 @@ textarea.field {
   .anim-breathe,
   .spin,
   .travel::after,
-  .bar-grow {
+  .bar-grow,
+  .sheet {
     animation: none !important;
+  }
+  .spot,
+  .gauge-arc,
+  .tip::after {
+    transition: none !important;
   }
   .btn {
     transition: none;
