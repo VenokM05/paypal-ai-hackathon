@@ -8,6 +8,7 @@
  *
  * Run:  npx tsx server/guardian-mcp.ts
  */
+import "../src/lib/load-env";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";

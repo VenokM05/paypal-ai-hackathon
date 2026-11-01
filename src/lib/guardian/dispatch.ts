@@ -39,6 +39,25 @@ export async function guarded(call: ToolCall): Promise<string> {
 /** Actually run the PayPal call and record it as executed. */
 export async function execute(call: ToolCall): Promise<string> {
   const gw = getGateway();
+  try {
+    return await runPayPal(call, gw);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    recordAudit({
+      at: new Date().toISOString(),
+      agentId: call.agentId,
+      tool: call.tool,
+      argsSummary: summarize(call),
+      outcome: "allow",
+      matchedRuleIds: [],
+      riskScore: 0,
+      explanation: `Policy allowed the action, but the PayPal (${gw.mode}) call failed: ${msg.slice(0, 300)}`,
+    });
+    return `⚠️ Guardian allowed this action, but the PayPal ${gw.mode} API rejected it: ${msg.slice(0, 300)}`;
+  }
+}
+
+async function runPayPal(call: ToolCall, gw: ReturnType<typeof getGateway>): Promise<string> {
   let r: { id: string; status: string; detail: string };
   switch (call.tool) {
     case "create_payment": {

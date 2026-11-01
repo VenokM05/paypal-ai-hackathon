@@ -161,16 +161,13 @@ export class LiveGateway implements PayPalGateway {
     const { status, body } = await this.api("/v2/invoicing/invoices", {
       method: "POST",
       body: JSON.stringify({
-        marketplace_id: "EBAY",
         detail: { currency_code: amount.currency_code, note: memo?.slice(0, 250) },
-        primary_recipients: [{ merchant_info: { email: "sandbox-merchant@business.example" }, email: recipient }],
-        referenced_invoices: [],
+        primary_recipients: [{ email: recipient }],
         invoices: [
           {
-            unit_of_measure: "AMOUNT",
-            item_amount: { currency_code: amount.currency_code, value: amount.value },
-            quantity: 1,
             name: "Guardian-issued invoice",
+            quantity: 1,
+            unit_amount: { currency_code: amount.currency_code, value: amount.value },
           },
         ],
       }),
@@ -188,7 +185,7 @@ export class LiveGateway implements PayPalGateway {
     // The public PayPal Disputes API supports listing/accepting/offers, not
     // buyer-side creation, so in live mode we record the intent and search for
     // the related dispute instead of fabricating one.
-    const { status, body } = await this.api(`/api/rest/v1/disputes?page_size=5`, { method: "GET" });
+    const { status, body } = await this.api(`/v1/customer/disputes?page_size=5`, { method: "GET" });
     const b = body as { items?: { dispute_id: string; status: string; reason_code: string }[] };
     if (status >= 400) throw new Error(`PayPal dispute search failed (${status}): ${JSON.stringify(body).slice(0, 300)}`);
     const items = b.items ?? [];

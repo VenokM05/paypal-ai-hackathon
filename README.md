@@ -76,6 +76,8 @@ Tools exposed: `agent_pay`, `capture_payment`, `send_invoice`, `open_dispute`, `
 
 Note: the public Disputes API does not allow buyer-side dispute *creation*; in live mode Guardian records the dispute intent and lists existing sandbox disputes — honestly labeled in the audit trail.
 
+Sandbox apps only have **Payments** enabled by default. Invoicing and Transaction Search answer `403 NOT_AUTHORIZED` until you toggle those optional products in the PayPal dashboard; Guardian doesn't crash — the action is audited with the real API error and the demo keeps running. Verified live: OAuth token, Orders v2 create (real order ids appear in `paypalRef`), disputes list.
+
 ## AI integration
 
 - **NL policy compiler** — write rules in plain English ("no payment over $300", "block gift-card merchants"); an LLM compiles them into deterministic rule objects. With no API key configured, a regex heuristic compiler covers the common shapes, so the demo never dies on missing keys.
