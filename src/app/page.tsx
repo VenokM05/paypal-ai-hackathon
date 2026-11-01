@@ -147,11 +147,13 @@ export default function Console() {
   const [tab, setTab] = useState<Tab>("lab");
   const [toast, setToast] = useState<{ msg: string; kind: string } | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const r = await fetch("/api/state", { cache: "no-store" });
-      setState((await r.json()) as State);
-    } catch { /* server restarting */ }
+  const refresh = useCallback(() => {
+    fetch("/api/state", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((s) => setState(s as State))
+      .catch(() => {
+        /* server restarting */
+      });
   }, []);
 
   useEffect(() => {
@@ -555,7 +557,7 @@ function Policies({ state, refresh, ping }: { state: State; refresh: () => void;
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) add(); }}
             rows={2}
-            placeholder="e.g. No payment over $300 without me · Block gift-card merchants · Freelance biller gets a $1,000 daily cap"
+            placeholder="e.g. No payment over $300 without me · Block paypa1-verify.support · Freelance biller gets a $1,000 daily cap"
             className="w-full resize-none rounded-lg border bg-transparent p-3 font-mono text-[12px] placeholder:text-[color:var(--faint)] focus:outline-none"
             style={{ borderColor: "var(--line)", color: "var(--text)" }}
           />

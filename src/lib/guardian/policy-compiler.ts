@@ -85,8 +85,9 @@ export function heuristicCompile(
   agents: { id: string; name: string }[],
 ): Record<string, unknown> {
   const s = nl.toLowerCase();
-  const dollar = /(\d+(?:[.,]\d{1,2})?)\s*(usd|\$|dollars?|bucks)?/.exec(s);
-  const money = dollar ? parseFloat(dollar[1].replace(",", "")) : null;
+  // Money must be unit-qualified ("$200", "200 usd", "300 dollars"). A bare number
+  // is a *count*, which is what velocity rules are written with ("5 per minute").
+  const money = parseMoney(s);
   const approval = /(approval|approve|confirm|ask|human|permission|ok first|need)/.test(s);
   const action = approval ? "require_approval" : "block";
 
@@ -129,9 +130,20 @@ export function heuristicCompile(
   };
 }
 
+/** "$1,000", "1,000 usd", "$75.50" → number; bare unqualified digits → null (a count). */
+function parseMoney(s: string): number | null {
+  const m = /\$\s*(\d[\d,]*(?:[.,]\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s*(?:usd|dollars?|bucks)\b/.exec(s);
+  if (!m) return null;
+  const raw = (m[1] ?? m[2]).replace(/,/g, "");
+  const value = parseFloat(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
 function extractRecipientTokens(s: string): string[] {
   const emails = s.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/g) ?? [];
   if (emails.length) return [...new Set(emails)];
-  const hosts = s.match(/\b[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|dev|example|co|xyz)\b/g) ?? [];
+  // Any real-looking hostname, not just a short list of TLDs — scam domains use
+  // .support, .shop, .money, .top and the zero-key parser must be able to block them.
+  const hosts = s.match(/\b[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)*\.[a-z]{2,}\b/g) ?? [];
   return [...new Set(hosts)];
 }

@@ -68,7 +68,7 @@ export function heuristicRisk(
     score += 15; factors.push("Pressure language in request details");
   }
   let injectionHits = 0;
-  for (const [re, label] of INJECTION_PATTERNS) {
+  for (const [re] of INJECTION_PATTERNS) {
     if (re.test(freeText)) injectionHits++;
   }
   if (injectionHits > 0) {
