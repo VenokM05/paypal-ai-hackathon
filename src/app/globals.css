@@ -1,34 +1,85 @@
 @import "tailwindcss";
 
-/* ─────────────────────────  Agent Guardian design tokens  ───────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   Agent Guardian — design system v2
+
+   A security-operations console, not a marketing page. Rules that keep it
+   honest:
+
+   1. Color is data. One brand accent (blue) + three decision states
+      (allow / hold / block). Nothing decorative gets a color.
+   2. Surface depth comes from background steps and hairlines, never from
+      glows, gradients, or blur.
+   3. Type has a rhythm: 10 / 11 / 13 / 15 / 22. Identifiers are mono.
+   4. Density beats whitespace. Aligned columns let you see a pattern in
+      the audit trail; cards with generous padding hide it.
+   5. Every ink token clears WCAG AA on every surface it is used on
+      (ratios noted inline). Verified with a contrast script, not by eye.
+   ══════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --ink-950: #05080d;
-  --ink-900: #090e16;
-  --ink-850: #0d1420;
-  --ink-800: #111a28;
-  --ink-700: #182537;
-  --line: rgba(140, 172, 214, 0.12);
-  --line-strong: rgba(140, 172, 214, 0.24);
-  --text: #e7eef7;
-  --muted: #8ba0b8;
-  --faint: #586d85;
-  --guardian: #4da3ff;
-  --guardian-soft: rgba(77, 163, 255, 0.14);
-  --mint: #2fd6a3;
-  --mint-soft: rgba(47, 214, 163, 0.12);
-  --amber: #f7b955;
-  --amber-soft: rgba(247, 185, 85, 0.12);
-  --coral: #ff6b8b;
-  --coral-soft: rgba(255, 107, 139, 0.12);
-  --violet: #b195ff;
-  --violet-soft: rgba(177, 149, 255, 0.12);
+  /* surfaces — 4 steps, no more */
+  --canvas: hsl(218 30% 4%); /* #07090d  app background */
+  --panel: hsl(216 26% 7.5%); /* #0e1218  card / table */
+  --raised: hsl(215 24% 11%); /* #151b23  hover, inset chips */
+  --inset: hsl(218 34% 5.5%); /* #090d13  code blocks, wells */
+
+  /* hairlines */
+  --line: hsl(205 25% 45% / 0.16);
+  --line-strong: hsl(205 30% 60% / 0.3);
+
+  /* ink — AA verified on every surface above */
+  --ink-1: hsl(210 40% 96%); /* 15.8–18.2:1  primary text */
+  --ink-2: hsl(212 24% 76%); /* 9.4–10.9:1   secondary */
+  --ink-3: hsl(213 18% 62%); /* 6.2–7.1:1    meta, labels */
+  --ink-4: hsl(214 15% 54%); /* 4.7–5.4:1    quietest *text* (was 3.76 = fail) */
+
+  /* brand: the only decorative color in the product */
+  --accent: hsl(211 100% 66%); /* #52a5ff 6.75–7.8:1 */
+  --accent-ink: hsl(218 30% 4%); /* text placed on accent fill: 7.8:1 */
+
+  /* decision states — meaning, not mood */
+  --allow: hsl(158 64% 50%); /* 8.8–10.1:1 */
+  --hold: hsl(38 92% 60%); /* 9.4–10.8:1 */
+  --block: hsl(352 88% 72%); /* 6.6–7.6:1 */
+  --allow-wash: hsl(158 64% 50% / 0.1);
+  --hold-wash: hsl(38 92% 60% / 0.1);
+  --block-wash: hsl(352 88% 72% / 0.1);
+  --accent-wash: hsl(211 100% 66% / 0.12);
+
+  /* radius: two steps only */
+  --r-sm: 4px;
+  --r-md: 7px;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 420ms;
+
+  /* focus ring, one style everywhere */
+  --ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent);
 }
 
 @theme inline {
-  --color-background: var(--ink-950);
-  --color-foreground: var(--text);
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-inset: var(--inset);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-allow: var(--allow);
+  --color-hold: var(--hold);
+  --color-block: var(--block);
+  --radius-panel: var(--r-md);
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 * {
@@ -40,115 +91,332 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(1200px 500px at 70% -10%, rgba(77, 163, 255, 0.07), transparent 60%),
-    radial-gradient(900px 420px at 10% 110%, rgba(177, 149, 255, 0.05), transparent 60%),
-    var(--ink-950);
-  color: var(--text);
+  background: var(--canvas);
+  color: var(--ink-1);
   font-family: var(--font-sans);
-  font-feature-settings: "cv02", "tnum";
+  font-size: 13px;
+  line-height: 1.55;
+  /* aligned digits everywhere: a table whose numbers jitter is unreadable */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(77, 163, 255, 0.35);
+  background: hsl(211 100% 66% / 0.28);
 }
 
-/* thin, quiet scrollbars */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-sm);
+}
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--ink-700) transparent;
+  scrollbar-color: var(--raised) transparent;
 }
-*::-webkit-scrollbar { width: 8px; height: 8px; }
-*::-webkit-scrollbar-thumb { background: var(--ink-700); border-radius: 8px; }
-*::-webkit-scrollbar-track { background: transparent; }
-
-/* ─────────────────────────  Motion  ───────────────────────── */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
 }
-@keyframes slide-in {
-  from { opacity: 0; transform: translateX(14px); }
-  to { opacity: 1; transform: translateX(0); }
+*::-webkit-scrollbar-thumb {
+  background: var(--raised);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(247, 185, 85, 0.45); }
-  70% { box-shadow: 0 0 0 8px rgba(247, 185, 85, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(247, 185, 85, 0); }
-}
-@keyframes radar-sweep {
-  to { transform: rotate(360deg); }
-}
-@keyframes breathe {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
-}
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
-}
-@keyframes gauge-in {
-  from { stroke-dashoffset: var(--gauge-circ); }
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.anim-fade-up { animation: fade-up 0.35s ease both; }
-.anim-slide-in { animation: slide-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-.anim-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
-.anim-breathe { animation: breathe 2.4s ease-in-out infinite; }
+/* ─────────────────────────────  primitives  ───────────────────────────── */
 
-.gauge-arc {
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+/* A bordered block of work. Not every block is a panel — only top-level groups. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
 }
 
-.radar-disc {
-  background: conic-gradient(from 0deg, rgba(77, 163, 255, 0.55), transparent 28%);
-  animation: radar-sweep 3.2s linear infinite;
-}
-
-/* card lift */
-.lift {
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-.lift:hover {
-  transform: translateY(-1px);
-  border-color: var(--line-strong);
-  box-shadow: 0 8px 28px -18px rgba(0, 0, 0, 0.9);
-}
-
-.press {
-  transition: transform 0.12s ease, filter 0.12s ease;
-}
-.press:active:not(:disabled) { transform: scale(0.97); }
-.press:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* labels */
+/* Section header: uppercase label at 10px, always the quietest thing nearby. */
 .eyebrow {
   font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
   font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
-/* surfaces */
-.surface {
-  background: linear-gradient(180deg, var(--ink-850), var(--ink-900));
+/* Identifiers, IDs, money, counts. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wash {
+  background: var(--raised);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-sm);
 }
 
-/* skeleton shimmer for loading rows */
-.shimmer {
-  background: linear-gradient(90deg, var(--ink-800) 25%, var(--ink-700) 50%, var(--ink-800) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
+kbd,
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: var(--r-sm);
+  background: var(--raised);
+  color: var(--ink-3);
 }
 
-/* reduce motion respect */
+/* ─────────────────────────────  controls  ───────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--raised);
+  color: var(--ink-1);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.btn:hover:not(:disabled) {
+  background: hsl(215 24% 15%);
+  border-color: var(--line-strong);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-primary:hover:not(:disabled) {
+  background: hsl(211 100% 72%);
+  border-color: hsl(211 100% 72%);
+}
+
+.btn-allow {
+  background: var(--allow);
+  border-color: var(--allow);
+  color: var(--accent-ink);
+}
+.btn-allow:hover:not(:disabled) {
+  background: hsl(158 64% 56%);
+  border-color: hsl(158 64% 56%);
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: hsl(352 88% 72% / 0.45);
+  color: var(--block);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--block-wash);
+  border-color: var(--block);
+}
+
+.btn-quiet {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+.btn-quiet:hover:not(:disabled) {
+  background: var(--raised);
+  color: var(--ink-1);
+}
+
+.btn-sm {
+  height: 25px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+
+/* form field — dark native select option lists need an explicit background */
+.field {
+  height: 32px;
+  width: 100%;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--inset);
+  color: var(--ink-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.field:hover {
+  border-color: var(--line-strong);
+}
+.field::placeholder {
+  color: var(--ink-4);
+}
+textarea.field {
+  height: auto;
+  padding: 10px;
+  line-height: 1.6;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* ─────────────────────────────  data table  ───────────────────────────── */
+
+/* The audit trail's home. Column alignment is the whole point: repeated
+   velocity blocks should look like a column of the same word, not a list. */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+  padding: 7px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+.table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  vertical-align: top;
+}
+.table tbody tr:hover td {
+  background: hsl(215 24% 11% / 0.6);
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table .right {
+  text-align: right;
+}
+.table .mono {
+  font-family: var(--font-mono);
+}
+/* Agent ids and scopes must never fold: a wrapped identifier reads as two rows. */
+.table .nowrap {
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────  motion  ───────────────────────────── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* A request crossing a stage. Used only while a scenario is actually running,
+   so the movement always means something real. */
+@keyframes travel {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.anim-fade-up {
+  animation: fade-up var(--dur) var(--ease) both;
+}
+.anim-slide-in {
+  animation: slide-in var(--dur) var(--ease) both;
+}
+.anim-breathe {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+.travel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(211 100% 66% / 0.35), transparent);
+  animation: travel 1.1s linear infinite;
+}
+.bar-grow {
+  transform-origin: left;
+  animation: bar-grow var(--dur-slow) var(--ease) both;
+}
+
+/* the risk dial sweeps to its value instead of snapping */
+.gauge-arc {
+  transition: stroke-dasharray var(--dur-slow) var(--ease);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .anim-fade-up, .anim-slide-in, .anim-pulse-ring, .anim-breathe, .radar-disc, .shimmer {
+  .anim-fade-up,
+  .anim-slide-in,
+  .anim-breathe,
+  .spin,
+  .travel::after,
+  .bar-grow {
     animation: none !important;
   }
-  .lift, .press { transition: none; }
+  .btn {
+    transition: none;
+  }
 }
