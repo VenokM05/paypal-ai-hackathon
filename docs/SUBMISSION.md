@@ -3,8 +3,9 @@
 Paste-ready text for the **"Enter a Submission"** form at
 [paypalaihackathon.devpost.com](https://paypalaihackathon.devpost.com/).
 Written against the official rules (submission window closes **Nov 12, 2026, 12:00 pm PT**).
-Placeholders in `{{double braces}}` are the two things only you can fill: the YouTube link and,
-if you deploy it, the hosted URL.
+Only one placeholder is left to fill — `{{https://youtu.be/XXXX}}`, the public YouTube link, which
+only you can upload. The hosted URL below is real; after every push, re-check `/api/health` there
+before you paste it into the form.
 
 ---
 
@@ -43,8 +44,19 @@ https://github.com/VenokM05/paypal-ai-hackathon
 ## Hosted demo URL
 
 ```
-{{https://agent-guardian.onrender.com}}   # optional — the rules accept repo instructions alone, and yours are complete
+https://paypal-ai-hackathon-ten.vercel.app
 ```
+
+> Deployed from the GitHub repo on Vercel (Node 22). Before you paste it into the form, open
+> <https://paypal-ai-hackathon-ten.vercel.app/api/health> — it should answer
+> `{"ok":true,"ledger":"guardian/guardian.db","gateway":"mock"}` (`"live"` if you gave the
+> deployment sandbox keys). If it says `ok:false` or 500s, the deploy is on the old build: push and
+> redeploy, then re-check.
+>
+> One honest caveat to keep in the description: a serverless host has a read-only disk, so Guardian
+> opens the SQLite ledger in `/tmp` (or memory) and it re-seeds on a cold start. Every button works;
+> audit history just isn't durable there. `GET /api/health` on any deployment tells you which mode it
+> opened. This is also why the repo's own setup instructions remain the primary demo path.
 
 ---
 
@@ -103,9 +115,13 @@ cd paypal-ai-hackathon && npm install && npm run dev
 
 Open <http://localhost:3000>, press **1**, click **Run** on *Rogue-agent drain*. The ledger
 self-seeds (3 agents, 6 rules) and the default mock gateway answers with PayPal-shaped,
-deterministic responses so the entire policy → risk → approval → audit pipeline is verifiable
-offline. The same three scenarios also run as real MCP clients: `npm run demo:rogue`,
-`demo:friendly`, `demo:injection`.
+deterministic responses, so the whole policy → risk → approval → audit pipeline is verifiable
+offline — no PayPal account, no API key, no database to set up. The same three scenarios also run as
+real MCP clients: `npm run demo:rogue`, `demo:friendly`, `demo:injection`.
+
+**No time to clone?** The identical console is hosted at
+<https://paypal-ai-hackathon-ten.vercel.app>. Serverless disk is read-only, so its ledger lives in
+`/tmp` and re-seeds on a cold start — `GET /api/health` shows what a given deployment opened.
 
 **To run it against the live sandbox** (optional), copy `.env.example`, add `PAYPAL_MODE=live`
 and your own sandbox app's `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`, restart, and the identical
@@ -139,7 +155,7 @@ listed as sponsor options; using them is optional and does not change what the p
 ## Originality and timing (rules §4 "New & Existing")
 
 Entirely new work, started and finished inside the submission window. First commit 2026-10-29,
-last 2026-11-01, nine commits, solo author, no code or assets taken from any prior project.
+last 2026-11-02, twelve commits, solo author, no code or assets taken from any prior project.
 
 ## Authorization and third-party rights (rules §4 "Third Party Integrations")
 
@@ -159,7 +175,7 @@ submission video.
 | Registered on Devpost for this hackathon | §4.1 | done |
 | Project integrates PayPal developer platform + an AI tool, PayPal central | §4 Project Req. | done |
 | Installs and runs consistently; behaves as the video and text say | Functionality | verified on a fresh clone |
-| Working demo judges can run — complete repo setup instructions **or** hosted URL | §4 | repo path done; hosted URL optional |
+| Working demo judges can run — complete repo setup instructions **or** hosted URL | §4 | repo path verified on a fresh clone; hosted URL works once this build is redeployed (check `/api/health`) |
 | Public repo on GitHub with all source, assets, instructions | §4 | done |
 | Open-source licence visible at the top of the repo page | §4 | `LICENSE` (MIT) at top level |
 | Demo video **< 3:00**, shows the project running, **public on YouTube** | §4 | filmed, 2:54 — upload public, paste link |
@@ -169,5 +185,10 @@ submission video.
 | Everything the judges need to test, without asking you | §4 Testing | README + this description |
 | Deadline | §1 | **Thu Nov 12, 2026, 12:00 pm Pacific** |
 
-The only two open boxes are the YouTube link and, if you want the hosted-URL credit, the Render
-deploy. Everything else above is already true of the repo as it stands.
+Two things are still yours to do: upload `agent-guardian-demo.mp4` publicly to YouTube and paste the
+link, and push + redeploy so the hosted demo answers (it is currently running the build from before
+the read-only-disk fix). Everything else above is already true of the repo as it stands.
+
+If you later want persistent history on the hosted build, Render with a disk volume is the one-line
+change (`GUARDIAN_DB_PATH=/data/guardian.db` on a mounted volume) — and it is a sponsor, so it earns
+its place in the "Built With" list rather than changing what the product does.

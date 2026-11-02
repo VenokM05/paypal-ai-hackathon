@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import type {
@@ -9,19 +10,69 @@ import type {
   PolicyRule,
 } from "./types";
 
-const DB_PATH =
-  process.env.GUARDIAN_DB_PATH ||
-  path.join(process.cwd(), "data", "guardian.db");
+/**
+ * Where the ledger lives, in order of preference:
+ *   1. GUARDIAN_DB_PATH (set it to ":memory:" to force an in-memory ledger)
+ *   2. <cwd>/data/guardian.db          — a normal checkout or long-lived server
+ *   3. <tmpdir>/guardian/guardian.db   — read-only filesystems (Vercel, Railway…)
+ *   4. in-memory                       — nothing writable at all
+ *
+ * On a serverless platform each cold start gets a fresh database, so the demo
+ * ledger re-seeds itself per instance. Everything stays functional; history from
+ * an earlier request may be gone. Set GUARDIAN_DB_PATH to a mounted volume for
+ * durable state.
+ */
+function candidates(): string[] {
+  const fromEnv = process.env.GUARDIAN_DB_PATH?.trim();
+  const out = fromEnv ? [fromEnv] : [];
+  out.push(
+    path.join(process.cwd(), "data", "guardian.db"),
+    path.join(os.tmpdir(), "guardian", "guardian.db"),
+    ":memory:",
+  );
+  return out;
+}
+
+function open(candidate: string): Database.Database | null {
+  try {
+    if (candidate !== ":memory:") {
+      fs.mkdirSync(path.dirname(candidate), { recursive: true });
+      // Prove the directory is actually writable before trusting it.
+      const probe = path.join(path.dirname(candidate), ".guardian-write-test");
+      fs.writeFileSync(probe, "ok");
+      fs.rmSync(probe, { force: true });
+    }
+    const d = new Database(candidate);
+    d.pragma("journal_mode = WAL");
+    d.prepare("SELECT 1").get();
+    return d;
+  } catch {
+    return null;
+  }
+}
+
+export let dbLocation = "in memory";
+
+export function getDbLocation(): string {
+  return dbLocation;
+}
 
 let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (db) return db;
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  migrate(db);
-  return db;
+  const tried: string[] = [];
+  for (const candidate of candidates()) {
+    const opened = open(candidate);
+    if (opened) {
+      db = opened;
+      dbLocation = candidate;
+      migrate(db);
+      return db;
+    }
+    tried.push(candidate);
+  }
+  throw new Error(`Guardian could not open a database (tried: ${tried.join(", ")})`);
 }
 
 function migrate(d: Database.Database) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listAgents, listApprovals, listAudit, listPolicies } from "@/lib/db";
+import { getDbLocation, listAgents, listApprovals, listAudit, listPolicies } from "@/lib/db";
 import { getGateway } from "@/lib/paypal/gateway";
 import { llmAvailable } from "@/lib/guardian/llm";
 
@@ -13,5 +13,6 @@ export async function GET() {
     audit: listAudit(120),
     paypalMode: getGateway().mode,
     llm: llmAvailable(),
+    ledger: getDbLocation() === ":memory:" ? "memory" : "sqlite",
   });
 }

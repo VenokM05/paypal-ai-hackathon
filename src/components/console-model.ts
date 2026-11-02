@@ -59,6 +59,7 @@ export type State = {
   audit: Audit[];
   paypalMode: string;
   llm: boolean;
+  ledger?: string;
 };
 
 export type ScenarioStep = { title: string; output: string };

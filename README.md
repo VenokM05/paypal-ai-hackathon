@@ -29,11 +29,19 @@ Built for the **PayPal AI Hackathon: Build What's Next with PayPal and AI** (sol
 [docs/DEMO_STORYBOARD.md](docs/DEMO_STORYBOARD.md); the hands-on script is
 [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md).
 
+**Or click through it hosted** — https://paypal-ai-hackathon-ten.vercel.app runs the same console with
+no install. `GET /api/health` on any deployment reports which gateway and which ledger it opened.
+On a serverless host the disk is read-only, so the ledger falls back to `/tmp` and re-seeds on each cold
+start: everything works, but audit history from an earlier request can disappear. Run it locally (below)
+for a durable ledger.
+
 ## Why this exists
 
 The hackathon brief asks *"what happens when you put AI behind the wheel."* Guardian is the answer to the part everyone skips: the wheel needs brakes. It wraps PayPal's official MCP surface (`agent_pay`, `send_invoice`, `open_dispute`, `search_transactions`, …) so an agent **cannot** touch PayPal without a decision you can read, defend, and review.
 
 ## Quickstart (2 minutes, zero API keys)
+
+Built and tested on **Node 22** (`node -v` — `package.json` declares `engines.node = "22.x"`, which is also what the hosted build runs).
 
 ```bash
 npm install
@@ -103,7 +111,7 @@ src/lib/paypal/            gateway: LiveGateway (sandbox REST) + MockGateway
 src/components/            console: shell · frame · ui · tabs/ (one file per section)
 src/hooks/use-console.ts   polls /api/state and drives the tabs
 src/app/                   Next.js console — Threat Lab · Approvals · Policies · Audit
-src/app/api/               /state /policies /approvals /attack /preview /reset
+src/app/api/               /state /policies /approvals /attack /preview /reset /health
 data/guardian.db           SQLite ledger (gitignored; npm run db:reset)
 ```
 

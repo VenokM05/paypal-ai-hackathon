@@ -43,7 +43,14 @@ Do **not** add `NODE_ENV=production` — `next build` needs devDependencies, and
 - `NODE_MODULE_VERSION` mismatch → Render picked a different Node; set the Node version explicitly in the service settings to 22.
 - Anything else → copy the failing line to me.
 
-Last-resort fallback: deploy on **Vercel** instead (zero config for Next.js, but there's no persistent disk either — the SQLite ledger resets on cold start, same as Render, so the trade-off is only about which one builds cleanly). Say so honestly in the submission rather than pretending history persists.
+Last-resort fallback: deploy on **Vercel** instead (zero config for Next.js). Its filesystem is
+read-only, which used to 500 every ledger route; `src/lib/db.ts` now walks down
+`GUARDIAN_DB_PATH` → `./data/guardian.db` → `<tmpdir>/guardian/guardian.db` → `:memory:`, so Vercel
+opens the database in `/tmp` and the console works. Verified locally by making `./data` un-openable and
+checking `/api/health` returns `{"ok":true,"ledger":"guardian/guardian.db"}` with a seeded 3-agent board.
+The trade-off vs Render: no writable volume, so history is per-instance and re-seeds on cold start —
+say so honestly in the submission rather than pretending it persists. `https://paypal-ai-hackathon-ten.vercel.app`
+is the current deployment; `GET /api/health` tells you which build and which ledger mode it is running.
 
 ### A2. Confirm it works
 

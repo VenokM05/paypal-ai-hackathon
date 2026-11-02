@@ -24,7 +24,7 @@ const GLOSSARY: [string, string][] = [
   ["Daily total", "A ceiling on everything moved in one calendar day, so small bad ideas cannot add up."],
   ["New recipient", "The first payment to anybody always waits for a human — the classic scam move."],
   ["MCP", "Model Context Protocol. The standard wire an agent uses to reach tools; Guardian speaks it on both sides."],
-  ["Ledger", "The local SQLite file every decision is written to. Never uploaded, gitignored."],
+  ["Ledger", "The SQLite file every decision is written to. On your machine it is ./data/guardian.db, gitignored and never uploaded; on a read-only demo host it opens in /tmp or memory."],
   ["Sandbox", "PayPal's test environment. Real API, real order ids, no real money."],
   ["Dry run", "The Custom probe: runs one hypothetical action through the engine and writes nothing anywhere."],
 ];
