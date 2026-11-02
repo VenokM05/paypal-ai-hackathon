@@ -49,19 +49,25 @@ https://youtu.be/ovKZxoKJOp0
 https://paypal-ai-hackathon-ten.vercel.app
 ```
 
-> Deployed from the GitHub repo on Vercel (Node 22), running in **mock mode on purpose** — no
-> credentials of yours live on a public host. Verified working, not just deployed: `/api/health`
-> returns `{"ok":true,"ledger":"guardian/guardian.db","gateway":"mock"}` (`"mode":"ephemeral"` joins
-> it once this build is pushed), `GET /api/state` answers 200, and clicking **Run** on
-> *Rogue-agent drain* in a real browser filled the trace with ten rows — 5 Blocked, 2 Held,
-> 3 Executed, mock order ids in the replies — and left one item waiting in Approvals.
+> Deployed from the GitHub repo on Vercel (Node 22) and pointed at the **live PayPal sandbox**: the
+> sandbox client id/secret are Vercel Production environment variables, so they never appear in the
+> repo, the bundle or the browser, and the hosted console makes real PayPal API calls. Verified
+> working, not just deployed: `/api/health` returns
+> `{"ok":true,"ledger":"guardian/guardian.db","mode":"ephemeral","gateway":"live"}`, `GET /api/state`
+> answers 200 with `paypalMode:"live"`, and a *Rogue-agent drain* run there came back with real
+> sandbox order ids (`2Y252013W10632817`, `475070360G043960M`, `9TD422358R959243P`) on the three
+> approvals Guardian let through, blocks on the rate limit and the $450 gift-card swing, and a hold on
+> the dispute. Clicking **Run** in a browser fills the trace the same way.
 >
-> One honest caveat to keep in the description: the disk there is read-only, so Guardian opens the
-> ledger in `/tmp` (`"mode":"ephemeral"`). Every rule, approval and audit row is real, but each
+> Two honest caveats to keep in the description. The disk there is read-only, so Guardian opens the
+> ledger in `/tmp` (`"mode":"ephemeral"`): every rule, approval and audit row is real, but each
 > serverless instance keeps its own history and a cold start re-seeds — two judges can land on
-> different boards. The footer says so rather than hiding it. `GET /api/health` on any deployment
-> reports which gateway and which ledger mode it opened. This is why the repo's own setup
-> instructions stay the primary demo path.
+> different boards. The footer says so rather than hiding it. And this sandbox app only has the Orders
+> product enabled, so the *Friendly* flow's invoice and transaction-search steps come back with
+> PayPal's own `403 NOT_AUTHORIZED` rather than a mock success; Guardian surfaces the rejection
+> verbatim instead of papering over it. Enabling Invoicing and Transaction Search in the PayPal
+> developer dashboard clears that. `GET /api/health` on any deployment reports which gateway and which
+> ledger mode it opened. This is why the repo's own setup instructions stay the primary demo path.
 
 ---
 
@@ -125,8 +131,9 @@ offline — no PayPal account, no API key, no database to set up. The same three
 real MCP clients: `npm run demo:rogue`, `demo:friendly`, `demo:injection`.
 
 **No time to clone?** The identical console is hosted at
-<https://paypal-ai-hackathon-ten.vercel.app>. Serverless disk is read-only, so its ledger lives in
-`/tmp` and re-seeds on a cold start — `GET /api/health` shows what a given deployment opened.
+<https://paypal-ai-hackathon-ten.vercel.app>, running against the live PayPal sandbox with sandbox keys
+held in the deployment's environment. Serverless disk is read-only, so its ledger lives in `/tmp` and
+re-seeds on a cold start — `GET /api/health` shows what a given deployment opened.
 
 **To run it against the live sandbox** (optional), copy `.env.example`, add `PAYPAL_MODE=live`
 and your own sandbox app's `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`, restart, and the identical
@@ -193,9 +200,10 @@ submission video.
 What is left is the Devpost form itself, not the entry: paste the fields above, attach
 `devpost-image.png` as the project card image, tick the "no financial or preferential support from the
 Sponsor or Administrator" attestation, and submit before **Nov 12, 12:00 pm PT**. The video is public,
-the repo is running, the hosted demo answers. Push this build when you get the chance so the footer can
-name its storage mode out loud ("ephemeral") instead of the generic label it shows today.
+the repo is running, and the hosted demo answers in live mode: `/api/health` reports
+`"gateway":"live","mode":"ephemeral"`, the footer names that storage mode out loud
+("SQLite (this instance)"), and a rogue-agent run there returns real sandbox order ids.
 
-If you later want persistent history on the hosted build, Render with a disk volume is the one-line
-change (`GUARDIAN_DB_PATH=/data/guardian.db` on a mounted volume) — and it is a sponsor, so it earns
-its place in the "Built With" list rather than changing what the product does.
+If you later want persistent history on the hosted build, a host with a mounted volume plus
+`GUARDIAN_DB_PATH=/data/guardian.db` is the one-line change — it changes where the ledger sits, not what
+the product does, so it is a nice-to-have rather than a requirement.

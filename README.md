@@ -30,10 +30,12 @@ Built for the **PayPal AI Hackathon: Build What's Next with PayPal and AI** (sol
 [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md).
 
 **Or click through it hosted** — https://paypal-ai-hackathon-ten.vercel.app runs the same console with
-no install, in mock mode and with no credentials on the public host. `GET /api/health` reports which
-gateway and which ledger mode any deployment opened. On a serverless host the disk is read-only, so the
-ledger falls back to `/tmp` and re-seeds per cold start: every rule, approval and audit row is real, but
-each instance keeps its own history. Run it locally (below) for a durable ledger.
+no install, against the **live PayPal sandbox**: the sandbox credentials live in the deployment's
+environment, never in the browser or the repo, so a rogue-agent run there creates real sandbox order
+ids. `GET /api/health` reports which gateway and which ledger mode any deployment opened. On a
+serverless host the disk is read-only, so the ledger falls back to `/tmp` and re-seeds per cold start:
+every rule, approval and audit row is real, but each instance keeps its own history. Run it locally
+(below) for a durable ledger, or with zero keys to stay entirely offline.
 
 ## Why this exists
 

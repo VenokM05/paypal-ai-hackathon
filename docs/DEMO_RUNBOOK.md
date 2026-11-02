@@ -26,7 +26,8 @@ Judges get a clickable URL instead of having to clone and run. Do this in order,
 | Start command | `npm run start` |
 | Instance type | **Free** (`0.1 CPU / 512 MB`) |
 
-5. **Environment** section — add **only** this (deliberately *no* PayPal keys here, see A3):
+5. **Environment** section — add **only** this (Render is the unused alternative; the live demo runs on
+   Vercel, see A3 for why *that* host does carry sandbox keys):
 
 | Key | Value |
 |---|---|
@@ -65,11 +66,26 @@ reports the gateway and ledger mode it opened.
 - The SQLite ledger sits on Render's **ephemeral disk**: a redeploy (and some restarts) resets the audit trail to empty. Harmless — judges land on a clean board with the 6 seeded policies — just don't promise anyone persistent history.
 - Click **Run** on the **Rogue-agent drain** row. The trace must fill with ten steps and the header chips must read `blocked / held / executed`; the Audit Trail tab shows the same rows with mock refs (`ORDER-…`).
 - Click **clear ledger** (top-right of the Threat Lab panel) when done so the next visitor sees a clean board.
-- On the hosted build the **Friendly flow** row behaves *better* than it does in live mode — mock mode has no 403 products, so it shows the intended hold → approve → instant path. See Part B0 trap 2 before recording that scenario locally.
+- On the hosted build the **Friendly flow** row is the one place live mode looks worse than mock: this
+  sandbox app has only the Orders product switched on, so its transaction-search and invoice steps come
+  back with PayPal's own `403 NOT_AUTHORIZED`, quoted verbatim in the trace instead of a tidy mock
+  success. Switch on **Transaction Search** and **Invoicing** under the app's PayPal product permissions
+  and those two rows work; the rogue scenario, which is the one judges should click, is unaffected.
+  See Part B0 trap 2 before recording that scenario locally.
 
-### A3. Why the hosted demo runs in mock mode (this is a feature, not a compromise)
+### A3. Why the hosted demo runs against the live sandbox (and why that is safe)
 
-Your sandbox `CLIENT_ID`/`SECRET` must **never** go into a public cloud service's env — Render staff, the browser extension token store, and every log line become a leak surface, and the repo is public. Mock mode is the deliberate design: the *identical* policy → risk → approval → audit pipeline runs with zero keys and zero accounts, so any judge can verify the guardrail logic in 30 seconds. **Live mode is proven locally**, and Part B's script shows it on camera with real PayPal order ids. That pairing (public URL anyone can run + recorded proof of real sandbox calls) is stronger than either alone.
+The public URL carries **sandbox** `CLIENT_ID`/`SECRET` as Vercel environment variables typed as
+*Secret*, which the dashboard cannot re-read after saving. They can only create sandbox orders against
+the demo buyer account — no live money, no payout rails, no production webhooks — and one click in the
+PayPal developer dashboard revokes them. That is a deliberately narrow exception to the rule "never put
+keys in a public host": the exception is bought with a sandbox-only app, and it is what lets a judge see
+a real `2Y252013W10632817` order id without cloning anything.
+
+Everything else about the design still holds: the *identical* policy → risk → approval → audit pipeline
+runs with zero keys and zero accounts in mock mode (`npm run dev` with no `.env.local`), so a judge who
+would rather not touch a hosted box can verify the guardrail logic in 30 seconds locally. The health
+endpoint on any deployment says which of the two it is running.
 
 ---
 
