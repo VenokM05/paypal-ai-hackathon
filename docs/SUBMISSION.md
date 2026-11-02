@@ -159,8 +159,8 @@ listed as sponsor options; using them is optional and does not change what the p
 
 ## Originality and timing (rules §4 "New & Existing")
 
-Entirely new work, started and finished inside the submission window. First commit 2026-10-29,
-last 2026-11-02, thirteen commits so far, solo author, no code or assets taken from any prior project.
+Entirely new work, started and finished inside the submission window. Every commit is solo-authored and
+falls between 2026-10-29 (first) and 2026-11-02 (latest); no code or assets taken from any prior project.
 
 ## Authorization and third-party rights (rules §4 "Third Party Integrations")
 
