@@ -24,6 +24,11 @@ AI agent (Claude, LangChain, OpenAI SDK, any MCP client)
 
 Built for the **PayPal AI Hackathon: Build What's Next with PayPal and AI** (solo entry).
 
+**Watch the 2:54 demo** — every scene below is the running product against the live PayPal sandbox:
+`{{YouTube link}}`. The storyboard, measured selectors and risk list are in
+[docs/DEMO_STORYBOARD.md](docs/DEMO_STORYBOARD.md); the hands-on script is
+[docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md).
+
 ## Why this exists
 
 The hackathon brief asks *"what happens when you put AI behind the wheel."* Guardian is the answer to the part everyone skips: the wheel needs brakes. It wraps PayPal's official MCP surface (`agent_pay`, `send_invoice`, `open_dispute`, `search_transactions`, …) so an agent **cannot** touch PayPal without a decision you can read, defend, and review.

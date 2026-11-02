@@ -64,6 +64,18 @@ Your sandbox `CLIENT_ID`/`SECRET` must **never** go into a public cloud service'
 
 ## Part B — Demo video (target 2:50, hard cap 3:00)
 
+> **Two documents feed the automated pipeline.** [`DEMO_NARRATION.md`](DEMO_NARRATION.md) holds the
+> voiceover, one sentence per line, and [`docs/DEMO_STORYBOARD.md`](DEMO_STORYBOARD.md) holds the
+> scene list, the measured selectors, the verbatim on-screen values and the risk list. Part B below
+> stays as the manual, do-it-yourself version of the same recording.
+>
+> **Behaviour change since 2026-11-01:** Approvals' **Approve & execute** button now really makes the
+> held PayPal call once (it goes through the same `guardian_check_approval` path an agent polls), so
+> the toast reads `Approved — Executed (PayPal live): Sandbox PayPal order …` and the row lands in
+> *Already decided* with an **Executed** chip. That is what makes the storyboard's m05 beat filmable;
+> the older "I'm not approving it, approving would fire the call for real" line in B2 is still true —
+> it just now fires on camera instead of never.
+
 > **Everything in this script was run against your live sandbox on 2026-11-01.** The counts,
 > risk scores, order ids and rule names below are what the console actually produces today, so
 > nothing you say can contradict what the judge sees. If you change policies before recording,
@@ -242,7 +254,7 @@ the $380.)*
 **2:35–2:50 · Close**
 
 *(Press `1`. In Custom probe, type a recipient, leave the defaults, click **Evaluate
-decision**. Verified result: HELD, risk 50.)*
+decision**. Verified result: HELD, risk 15.)*
 
 > "And anyone can try it: this probe dry-runs an arbitrary action through the same engine —
 > rules that fire, risk score, what the agent is told — with nothing written to the ledger and
