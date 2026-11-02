@@ -3,9 +3,8 @@
 Paste-ready text for the **"Enter a Submission"** form at
 [paypalaihackathon.devpost.com](https://paypalaihackathon.devpost.com/).
 Written against the official rules (submission window closes **Nov 12, 2026, 12:00 pm PT**).
-Only one placeholder is left to fill — `{{https://youtu.be/XXXX}}`, the public YouTube link, which
-only you can upload. The hosted URL below is real; after every push, re-check `/api/health` there
-before you paste it into the form.
+Every field below is filled with real values — nothing left to paste except what the Devpost form
+itself asks for. After each push, re-check `/api/health` on the hosted URL before you trust it.
 
 ---
 
@@ -34,12 +33,15 @@ https://github.com/VenokM05/paypal-ai-hackathon
 ## Video URL
 
 ```
-{{https://youtu.be/XXXX}}   # public, unlisted is NOT enough — the rules say "publicly visible on YouTube", under 3 minutes
+https://youtu.be/ovKZxoKJOp0
 ```
 
-> The finished file is `agent-guardian-demo.mp4` (2:54, 1920×1080, 11.7 MB) — recorded from the
-> production build against the live PayPal sandbox, one continuous take. Upload it **publicly**, then
-> paste the link above.
+> Checked against the live page: title **"Agent Guardian Demo"**, channel **ElvinM**, **public**
+> (`isUnlisted: false`), **174 s = 2:54**, inside the three-minute limit the rules set.
+> The file behind it is `agent-guardian-demo.mp4` (2:54, 1920×1080, 11.7 MB) — recorded from the
+> production build against the live PayPal sandbox, one continuous take, voiceover only.
+> Worth 60 seconds in YouTube's own description box: a line pointing at the repo and the hosted demo,
+> since judges land there first.
 
 ## Hosted demo URL
 
@@ -47,16 +49,19 @@ https://github.com/VenokM05/paypal-ai-hackathon
 https://paypal-ai-hackathon-ten.vercel.app
 ```
 
-> Deployed from the GitHub repo on Vercel (Node 22). Before you paste it into the form, open
-> <https://paypal-ai-hackathon-ten.vercel.app/api/health> — it should answer
-> `{"ok":true,"ledger":"guardian/guardian.db","gateway":"mock"}` (`"live"` if you gave the
-> deployment sandbox keys). If it says `ok:false` or 500s, the deploy is on the old build: push and
-> redeploy, then re-check.
+> Deployed from the GitHub repo on Vercel (Node 22), running in **mock mode on purpose** — no
+> credentials of yours live on a public host. Verified working, not just deployed: `/api/health`
+> returns `{"ok":true,"ledger":"guardian/guardian.db","gateway":"mock"}` (`"mode":"ephemeral"` joins
+> it once this build is pushed), `GET /api/state` answers 200, and clicking **Run** on
+> *Rogue-agent drain* in a real browser filled the trace with ten rows — 5 Blocked, 2 Held,
+> 3 Executed, mock order ids in the replies — and left one item waiting in Approvals.
 >
-> One honest caveat to keep in the description: a serverless host has a read-only disk, so Guardian
-> opens the SQLite ledger in `/tmp` (or memory) and it re-seeds on a cold start. Every button works;
-> audit history just isn't durable there. `GET /api/health` on any deployment tells you which mode it
-> opened. This is also why the repo's own setup instructions remain the primary demo path.
+> One honest caveat to keep in the description: the disk there is read-only, so Guardian opens the
+> ledger in `/tmp` (`"mode":"ephemeral"`). Every rule, approval and audit row is real, but each
+> serverless instance keeps its own history and a cold start re-seeds — two judges can land on
+> different boards. The footer says so rather than hiding it. `GET /api/health` on any deployment
+> reports which gateway and which ledger mode it opened. This is why the repo's own setup
+> instructions stay the primary demo path.
 
 ---
 
@@ -175,19 +180,21 @@ submission video.
 | Registered on Devpost for this hackathon | §4.1 | done |
 | Project integrates PayPal developer platform + an AI tool, PayPal central | §4 Project Req. | done |
 | Installs and runs consistently; behaves as the video and text say | Functionality | verified on a fresh clone |
-| Working demo judges can run — complete repo setup instructions **or** hosted URL | §4 | repo path verified on a fresh clone; hosted URL works once this build is redeployed (check `/api/health`) |
+| Working demo judges can run — complete repo setup instructions **or** hosted URL | §4 | both: repo path verified on a fresh clone; hosted URL clicked through in a browser (scenario ran, approvals filled) |
 | Public repo on GitHub with all source, assets, instructions | §4 | done |
 | Open-source licence visible at the top of the repo page | §4 | `LICENSE` (MIT) at top level |
-| Demo video **< 3:00**, shows the project running, **public on YouTube** | §4 | filmed, 2:54 — upload public, paste link |
+| Demo video **< 3:00**, shows the project running, **public on YouTube** | §4 | live at `https://youtu.be/ovKZxoKJOp0` — public, 2:54, checked on the watch page |
 | No third-party trademarks or unlicensed music in the video | §4 | verified frame-by-frame: voiceover only, no music, no marks but PayPal's |
 | All materials in English | §4 | narration is English |
 | Submission is original, solely owned | §7 | solo, in-window |
 | Everything the judges need to test, without asking you | §4 Testing | README + this description |
 | Deadline | §1 | **Thu Nov 12, 2026, 12:00 pm Pacific** |
 
-Two things are still yours to do: upload `agent-guardian-demo.mp4` publicly to YouTube and paste the
-link, and push + redeploy so the hosted demo answers (it is currently running the build from before
-the read-only-disk fix). Everything else above is already true of the repo as it stands.
+What is left is the Devpost form itself, not the entry: paste the fields above, attach
+`devpost-image.png` as the project card image, tick the "no financial or preferential support from the
+Sponsor or Administrator" attestation, and submit before **Nov 12, 12:00 pm PT**. The video is public,
+the repo is running, the hosted demo answers. Push this build when you get the chance so the footer can
+name its storage mode out loud ("ephemeral") instead of the generic label it shows today.
 
 If you later want persistent history on the hosted build, Render with a disk volume is the one-line
 change (`GUARDIAN_DB_PATH=/data/guardian.db` on a mounted volume) — and it is a sponsor, so it earns

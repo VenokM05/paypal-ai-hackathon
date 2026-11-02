@@ -57,6 +57,19 @@ export function getDbLocation(): string {
   return dbLocation;
 }
 
+/**
+ * How durable the opened ledger is, for the UI to say so honestly:
+ *   "local"     — inside the project directory, survives restarts
+ *   "ephemeral" — a temp directory; per-instance on serverless, re-seeds on cold start
+ *   "memory"    — nothing writable at all, gone when the request ends
+ */
+export function getLedgerMode(): "local" | "ephemeral" | "memory" {
+  getDb();
+  if (dbLocation === ":memory:") return "memory";
+  const tmp = path.resolve(os.tmpdir());
+  return dbLocation.startsWith(tmp) ? "ephemeral" : "local";
+}
+
 let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {

@@ -43,14 +43,18 @@ Do **not** add `NODE_ENV=production` — `next build` needs devDependencies, and
 - `NODE_MODULE_VERSION` mismatch → Render picked a different Node; set the Node version explicitly in the service settings to 22.
 - Anything else → copy the failing line to me.
 
-Last-resort fallback: deploy on **Vercel** instead (zero config for Next.js). Its filesystem is
-read-only, which used to 500 every ledger route; `src/lib/db.ts` now walks down
-`GUARDIAN_DB_PATH` → `./data/guardian.db` → `<tmpdir>/guardian/guardian.db` → `:memory:`, so Vercel
-opens the database in `/tmp` and the console works. Verified locally by making `./data` un-openable and
-checking `/api/health` returns `{"ok":true,"ledger":"guardian/guardian.db"}` with a seeded 3-agent board.
-The trade-off vs Render: no writable volume, so history is per-instance and re-seeds on cold start —
-say so honestly in the submission rather than pretending it persists. `https://paypal-ai-hackathon-ten.vercel.app`
-is the current deployment; `GET /api/health` tells you which build and which ledger mode it is running.
+Alternative that now works: **Vercel** (zero config for Next.js, and it is what
+`https://paypal-ai-hackathon-ten.vercel.app` runs today). Its filesystem is read-only, which used to 500
+every ledger route; `src/lib/db.ts` now walks down `GUARDIAN_DB_PATH` → `./data/guardian.db` →
+`<tmpdir>/guardian/guardian.db` → `:memory:`, so Vercel opens the database in `/tmp` and the console
+works. Verified twice — locally, by making `./data` un-openable and watching `/api/health` answer
+`{"ok":true,"ledger":"guardian/guardian.db","mode":"ephemeral"}` with a seeded 3-agent board, and on the
+live host, where clicking **Run** on *Rogue-agent drain* produced ten trace rows (5 blocked / 2 held /
+3 executed) and one item in Approvals.
+The trade-off vs Render: no writable volume, so history is per-instance and re-seeds on cold start — two
+visitors can land on different boards. Say so honestly in the submission rather than pretending it
+persists; the footer label changes to "SQLite (this instance)" to match. `/api/health` on any deployment
+reports the gateway and ledger mode it opened.
 
 ### A2. Confirm it works
 

@@ -103,13 +103,21 @@ export function TopBar({
 }
 
 export function StatusBar({ state }: { state: State | null }) {
-  const ephemeral = state?.ledger === "memory";
+  const mode = state?.ledger === "memory" || state?.ledger === "ephemeral" ? state.ledger : "local";
+  const ledgerLabel =
+    mode === "memory" ? "SQLite (memory)" : mode === "ephemeral" ? "SQLite (this instance)" : "local SQLite";
+  const ledgerTip =
+    mode === "memory"
+      ? "No writable disk here, so the ledger opens in memory: full engine, but history ends with the request."
+      : mode === "ephemeral"
+        ? "This host's disk is read-only, so the ledger sits in its temp folder. Every rule, approval and audit row is real — but each serverless instance keeps its own history, and a cold start re-seeds. Run it locally for a durable trail."
+        : "The audit file lives at ./data/guardian.db. Gitignored, never uploaded.";
   const cells: [string, string, string][] = state
     ? [
         ["Rules", `${state.policies.filter((p) => p.enabled).length}/${state.policies.length} active`, "Limits an agent may not cross. Disabled rules are counted but not enforced."],
         ["Agents", String(state.agents.length), "AI agents Guardian has seen. Each one has a trust level that scopes what it may attempt."],
         ["Requests", String(state.audit.length), "Decisions recorded on this machine since the ledger was last cleared."],
-        ["Ledger", ephemeral ? "SQLite (ephemeral)" : "local SQLite", ephemeral ? "Same SQLite engine, opened in memory because this host has no writable disk. Empty on every cold start, never uploaded." : "The audit file lives at ./data/guardian.db (or /tmp on a read-only host). Gitignored, never uploaded."],
+        ["Ledger", ledgerLabel, ledgerTip],
         ["Agent link", "MCP", "Model Context Protocol over stdio — the only way an agent reaches PayPal here."],
       ]
     : [["Status", "loading", "Reading the local ledger."]];

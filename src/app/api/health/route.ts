@@ -10,10 +10,12 @@ export const runtime = "nodejs";
  */
 export async function GET() {
   let ledger = "unavailable";
+  let mode: string = "unknown";
   let error: string | undefined;
   try {
-    const { getDb, getDbLocation } = await import("@/lib/db");
+    const { getDb, getDbLocation, getLedgerMode } = await import("@/lib/db");
     getDb();
+    mode = getLedgerMode();
     const tmp = getDbLocation();
     ledger = tmp === ":memory:" ? "memory" : tmp.split(/[\\/]/).slice(-2).join("/");
   } catch (e) {
@@ -28,5 +30,5 @@ export async function GET() {
     error = (error ? error + " | " : "") + (e instanceof Error ? e.message : String(e));
   }
 
-  return NextResponse.json({ ok: !error, ledger, gateway, ...(error ? { error } : {}) });
+  return NextResponse.json({ ok: !error, ledger, mode, gateway, ...(error ? { error } : {}) });
 }
