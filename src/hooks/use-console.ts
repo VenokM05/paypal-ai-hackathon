@@ -78,9 +78,18 @@ export function useConsole(pollMs = 2500) {
 
   const decide = useCallback(
     async (id: string, approve: boolean) => {
-      await json("/api/approvals", { method: "POST", body: JSON.stringify({ id, approve }) });
+      const r = await json<{ execution?: string }>("/api/approvals", {
+        method: "POST",
+        body: JSON.stringify({ id, approve }),
+      });
+      // The route actually ran the held call, so say what PayPal answered.
+      const said = (r.execution ?? "").replace(/^[^A-Za-z]+/, "").replace(/\s+\[status \w+\]$/, "");
       ping(
-        approve ? "Approved — Guardian executed the PayPal call" : "Denied — agent told not to retry",
+        approve
+          ? said
+            ? `Approved — ${said.slice(0, 150)}`
+            : "Approved — Guardian will run it when the agent checks back"
+          : "Denied — agent told not to retry",
         approve ? "approved" : "denied",
       );
       refresh();

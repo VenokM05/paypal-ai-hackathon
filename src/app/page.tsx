@@ -28,6 +28,9 @@ function useTourSeen(): boolean {
   return useSyncExternalStore(
     subscribeNoStorageEvents,
     () => {
+      // `?tour=off` suppresses it. Every fresh browser profile otherwise gets the
+      // first-run overlay, which gets in the way of embeds and screen recordings.
+      if (new URLSearchParams(window.location.search).get("tour") === "off") return true;
       try {
         return localStorage.getItem(TOUR_KEY) === "done";
       } catch {
